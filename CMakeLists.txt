@@ -23,3 +23,31 @@ target_link_libraries(${PROJECT_NAME}
         PRIVATE
         EasyEngineCore
 )
+
+# Copy the files and directories to the output directory
+set(FilesToCopy
+        "imgui.ini")
+
+set(DirectoriesToCopy
+        "assets"
+        "mono"
+        "Resources"
+        "SandboxProject")
+
+foreach(File ${FilesToCopy})
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/${File}"
+            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/${File}")
+
+    message(STATUS "Copying file: ${File}")
+endforeach()
+
+foreach(Directory ${DirectoriesToCopy})
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/${Directory}"
+            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/${Directory}")
+
+    message(STATUS "Copying directory: ${Directory}")
+endforeach()

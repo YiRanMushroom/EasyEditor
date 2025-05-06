@@ -16,6 +16,35 @@ namespace Easy {
     };
 
     export class EditorLayer : public Layer {
+    public:
+        EditorLayer() : Layer("EditorLayer"), m_EditorCamera() {}
+
+        void OnAttach() override {
+            // 1280x720
+            float aspectRatio = 1280.0f / 720.0f;
+            m_EditorCamera = OrthographicCamera(-aspectRatio, aspectRatio, -1.0f, 1.0f);
+            FramebufferSpecification fbSpec;
+            fbSpec.Attachments = {
+                FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RED_INTEGER, FramebufferTextureFormat::Depth
+            };
+            fbSpec.Width = 1280 / 2;
+            fbSpec.Height = 720 / 2;
+            m_SceneFramebuffer = Framebuffer::Create(fbSpec);
+        }
+
+        void OnUpdate(float) override {
+            m_SceneFramebuffer->Bind();
+
+            RenderCommand::SetClearColor({0.3f, 0.3f, 0.3f, 1.0f});
+            RenderCommand::Clear();
+
+            Renderer2D::BeginScene(m_EditorCamera);
+            Renderer2D::DrawQuad({0.0f, 0.0f}, {1.0f, 1.0f}, {1.0f, .3f, 1.0f, 1.0f});
+            Renderer2D::EndScene();
+
+            m_SceneFramebuffer->Unbind();
+        }
+
         void OnImGuiRender() override {
             // We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
             // because it would be confusing to have two docking targets within each others.
@@ -107,6 +136,10 @@ namespace Easy {
 
             if (ShowDemoWindow)
                 ImGui::ShowDemoWindow(&ShowDemoWindow);
+
+            ImGui::Begin("Scene");
+            ImGui::Image(m_SceneFramebuffer->GetColorAttachmentRendererID(), ImVec2(1280.f / 2, 720.f / 2));
+            ImGui::End();
         }
 
     public:
@@ -117,6 +150,9 @@ namespace Easy {
         bool opt_fullscreen = true;
         bool opt_padding = false;
         ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+
+        Arc<Easy::Framebuffer> m_SceneFramebuffer;
+        OrthographicCamera m_EditorCamera;
     };
 }
 
