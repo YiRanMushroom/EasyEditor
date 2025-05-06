@@ -30,7 +30,6 @@ set(FilesToCopy
 
 set(DirectoriesToCopy
         "assets"
-        "mono"
         "Resources"
         "SandboxProject")
 
