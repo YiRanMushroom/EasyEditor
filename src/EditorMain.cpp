@@ -124,6 +124,10 @@ void EditorLayer::OnImGuiRender() {
         ImGui::ShowDemoWindow(&ShowDemoWindow);
 
     RenderViewport();
+
+    if (Easy::Input::IsKeyPressed(Key::Escape)) {
+        Application::Get().Close();
+    }
 }
 
 void EditorLayer::RenderViewport() {
