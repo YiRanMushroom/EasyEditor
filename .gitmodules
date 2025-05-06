@@ -1,0 +1,4 @@
+[submodule "EasyEngineCore"]
+	path = EasyEngineCore
+	url = https://github.com/YiRanMushroom/EasyEngineCore
+	branch = master
