@@ -27,7 +27,11 @@ namespace Easy {
 
         void OnEvent(Event &) override;
 
+        void OnDetach() override;
+
         void RenderViewport();
+
+        void OnSceneUpdate(float ts);
 
     public:
         bool ShowDemoWindow = false;
@@ -42,6 +46,10 @@ namespace Easy {
         OrthographicCamera m_EditorCamera;
 
         ImVec2 m_ViewportSize = {1280.f / 2, 720.f / 2};
+
+        Scene m_Scene;
+        Entity m_TopSquareEntity;
+        Entity m_BottomSquareEntity;
     };
 }
 

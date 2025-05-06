@@ -6,6 +6,7 @@ import Easy;
 using namespace Easy;
 
 void EditorLayer::OnAttach() {
+    Layer::OnAttach();
     // 1280x720
     float aspectRatio = 1280.0f / 720.0f;
     m_EditorCamera = OrthographicCamera(-aspectRatio, aspectRatio, -1.0f, 1.0f);
@@ -16,23 +17,34 @@ void EditorLayer::OnAttach() {
     fbSpec.Width = 1280 / 2;
     fbSpec.Height = 720 / 2;
     m_SceneFramebuffer = Framebuffer::Create(fbSpec);
+
+    m_TopSquareEntity = m_Scene.CreateEntity("Top Square");
+    // m_TopSquareEntity.AddComponent<TransformComponent>(glm::vec3(0.0f, 0.5f, 0.0f));
+    m_TopSquareEntity.GetComponent<TransformComponent>().Translation = {0.0f, 0.5f, 0.0f};
+    m_TopSquareEntity.AddComponent<SpriteRendererComponent>(glm::vec4(1.0f, 0.3f, 1.0f, 1.0f));
+
+    m_BottomSquareEntity = m_Scene.CreateEntity("Bottom Square");
+    // m_BottomSquareEntity.AddComponent<TransformComponent>(glm::vec3(0.0f, -0.5f, 0.0f));
+    m_BottomSquareEntity.GetComponent<TransformComponent>().Translation = {0.0f, -0.5f, 0.0f};
+    m_BottomSquareEntity.AddComponent<SpriteRendererComponent>(glm::vec4(0.3f, 1.0f, 0.3f, 1.0f));
 }
 
 void EditorLayer::OnUpdate(float x) {
+    Layer::OnUpdate(x);
     m_SceneFramebuffer->Bind();
 
     RenderCommand::SetClearColor({0.3f, 0.3f, 0.3f, 1.0f});
     RenderCommand::Clear();
 
     Renderer2D::BeginScene(m_EditorCamera);
-    Renderer2D::DrawQuad({0.0f, 0.5f}, {1.0f, 1.0f}, {1.0f, .3f, 1.0f, 1.0f});
-    Renderer2D::DrawQuad({0.0f, -0.5f}, {1.0f, 1.0f}, {0.3f, 1.0f, 0.3f, 1.0f});
+    OnSceneUpdate(x);
     Renderer2D::EndScene();
 
     m_SceneFramebuffer->Unbind();
 }
 
 void EditorLayer::OnImGuiRender() {
+    Layer::OnImGuiRender();
     // We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
     // because it would be confusing to have two docking targets within each others.
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
@@ -128,7 +140,15 @@ void EditorLayer::OnImGuiRender() {
 }
 
 void EditorLayer::OnEvent(Event &event) {
+    Layer::OnEvent(event);
     EZ_CORE_INFO("Event: {0}", event.ToString());
+}
+
+void EditorLayer::OnDetach() {
+    m_Scene.DestroyEntity(m_TopSquareEntity);
+    m_Scene.DestroyEntity(m_BottomSquareEntity);
+
+    Layer::OnDetach();
 }
 
 void EditorLayer::RenderViewport() {
@@ -159,4 +179,12 @@ void EditorLayer::RenderViewport() {
     }
 
     ImGui::End();
+}
+
+void EditorLayer::OnSceneUpdate(float ts) {
+    auto view = m_Scene.GetAllEntitiesWith<TransformComponent, SpriteRendererComponent>();
+    for (const auto& entity : view) {
+        auto [transform, sprite] = view.get<TransformComponent, SpriteRendererComponent>(entity);
+        Renderer2D::DrawQuad(transform.Translation, transform.Scale, sprite.Color);
+    }
 }
