@@ -25,6 +25,8 @@ namespace Easy {
 
         void OnImGuiRender() override;
 
+        void OnEvent(Event &) override;
+
         void RenderViewport();
 
     public:

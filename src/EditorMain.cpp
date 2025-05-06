@@ -1,6 +1,7 @@
 module Editor.EditorMain;
 
 import Easy;
+#include "Core/MacroUtils.hpp"
 
 using namespace Easy;
 
@@ -124,15 +125,20 @@ void EditorLayer::OnImGuiRender() {
         ImGui::ShowDemoWindow(&ShowDemoWindow);
 
     RenderViewport();
+}
 
-    if (Easy::Input::IsKeyPressed(Key::Escape)) {
-        Application::Get().Close();
-    }
+void EditorLayer::OnEvent(Event &event) {
+    EZ_CORE_INFO("Event: {0}", event.ToString());
 }
 
 void EditorLayer::RenderViewport() {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::Begin("ViewPort");
+    if (ImGui::IsWindowFocused() && ImGui::IsWindowHovered()) {
+        Application::Get().GetImGuiLayer()->BlockEvents(false);
+    } else {
+        Application::Get().GetImGuiLayer()->BlockEvents(true);
+    }
     ImGui::PopStyleVar();
     auto currentSize = ImGui::GetContentRegionAvail();
 
