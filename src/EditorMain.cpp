@@ -9,6 +9,8 @@ import Easy.Scripting.JniBind;
 
 using namespace jni;
 
+using namespace Easy::ScriptingEngine::Util::TypeDefinitions;
+
 namespace Easy {
     void EditorLayer::OnAttach() {
         Layer::OnAttach();
@@ -196,6 +198,8 @@ namespace Easy {
 }
 
 int main() {
+    // std::cout << .Data << std::endl;
+
     JavaVMOption options[1];
     options[0].optionString = const_cast<char *>("-Djava.class.path=./easy-core-lib-1.0.jar");
     ScriptingEngine::Init({.version = JNI_VERSION_1_6},
