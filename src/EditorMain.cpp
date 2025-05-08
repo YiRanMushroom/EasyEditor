@@ -197,6 +197,10 @@ namespace Easy {
     }
 }
 
+void nativePrintln(JNIEnv *env, jclass clazz, std::string str) {
+    std::cout << "native: " << str << std::endl;
+}
+
 int main() {
     // std::cout << .Data << std::endl;
 
@@ -206,6 +210,19 @@ int main() {
                           options);
 
     GlobalObject<JTClass> &easyLibClassObj = *ScriptingEngine::Lib::LibClassObj;
+
+    // bool cs = Lib::RegisterNativeFunctionRaw<LibClassF, nativePrintln>(
+    //     static_cast<jclass>(static_cast<jobject>(easyLibClassObj)),
+    //     "NativePrintlnImpl",
+    //     "(Ljava/lang/String;)V"
+    // );
+
+    bool cs = Lib::RegisterSimpleClassStaticFunction<nativePrintln>(
+        static_cast<jclass>(static_cast<jobject>(easyLibClassObj)),
+        "NativePrintlnImpl");
+
+    std::cout << "cs: " << cs << std::endl;
+
     ScriptingEngine::Lib::PrintClassInfo((static_cast<jobject>(easyLibClassObj)));
     LocalObject<JTClass> jstringClassObj = ScriptingEngine::Lib::GetClass("java.lang.String");
     LocalObject<JTClass> jclassClassObj = ScriptingEngine::Lib::GetClass("java.lang.Class");
