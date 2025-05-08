@@ -3,8 +3,8 @@ module;
 #include <Core/MacroUtils.hpp>
 
 module EditorMain;
-import Easy;
 
+import Easy;
 import Easy.Scripting.JniBind;
 
 using namespace jni;
@@ -198,34 +198,34 @@ namespace Easy {
 int main() {
     JavaVMOption options[1];
     options[0].optionString = const_cast<char *>("-Djava.class.path=./easy-core-lib-1.0.jar");
-    ScriptingEngine::Init({.version = Jni_Version_1_6},
+    ScriptingEngine::Init({.version = JNI_VERSION_1_6},
                           options);
 
     constexpr static auto ETLib = ScriptingEngine::Lib::JniType;
 
     constexpr static StaticRef<ETLib> libStaticRef;
 
-    LocalObject easyLibClassObj = libStaticRef.Call<"GetClass">("com.easy.Lib");
+    LocalObject<JTClass> easyLibClassObj = libStaticRef.Call<"GetClass">("com.easy.Lib");
     libStaticRef.Call<"PrintClassInfo">(easyLibClassObj);
-    LocalObject jstringClassObj = libStaticRef.Call<"GetClass">("java.lang.String");
-    LocalObject jclassClassObj = libStaticRef.Call<"GetClass">("java.lang.Class");
+    LocalObject<JTClass> jstringClassObj = libStaticRef.Call<"GetClass">("java.lang.String");
+    LocalObject<JTClass> jclassClassObj = libStaticRef.Call<"GetClass">("java.lang.Class");
 
-    LocalArray<jobject, 1, JTClass> paraArray{3};
-    paraArray.Set(0, static_cast<jobject>(easyLibClassObj));
-    paraArray.Set(1, static_cast<jobject>(jstringClassObj));
-    paraArray.Set(2, static_cast<jobject>(jclassClassObj));
+    LocalArray<jobject, 1, JTClass> paraArray = ScriptingEngine::Lib::CreateObjectArray<LocalArray<jobject, 1,
+        JTClass>>(
+        easyLibClassObj, jstringClassObj, jclassClassObj);
 
-    auto targetMethod = libStaticRef.Call<"GetMethodFromClassAndFunctionName">(
-        easyLibClassObj, "GetMethodFromClassAndFunctionName", paraArray);
+    LocalObject<JTMethod> targetMethod = ScriptingEngine::Lib::GetMethodFromClassAndFunctionName(
+        easyLibClassObj, "GetMethodFromClassAndFunctionName",
+        paraArray);
 
     LocalString targetMethodName{"GetMethodFromClassAndFunctionName"};
 
-    LocalArray<jobject, 1, JTObject> anotherParaArray{3};
-    anotherParaArray.Set(0, static_cast<jobject>(easyLibClassObj));
-    anotherParaArray.Set(1, static_cast<jobject>(static_cast<jstring>(targetMethodName)));
-    anotherParaArray.Set(2, static_cast<jobject>(paraArray));
+    LocalArray<jobject, 1, JTObject> anotherParaArray
+            = ScriptingEngine::Lib::CreateObjectArray<LocalArray<jobject, 1, JTObject>>(
+                easyLibClassObj, static_cast<jstring>(targetMethodName), paraArray);
 
-    auto targetMethod2 = libStaticRef.Call<"CallStaticMethod">(targetMethod, anotherParaArray);
+    LocalObject<JTObject> targetMethod2 =
+            ScriptingEngine::Lib::CallStaticMethod(targetMethod, anotherParaArray);
 
     GlobalObject<JTMethod> targetMethodGlobalRef{PromoteToGlobal{}, static_cast<jobject>(targetMethod)};
 

@@ -3,8 +3,8 @@ module;
 #include "Core/MacroUtils.hpp"
 
 export module EditorMain;
-
 import Easy;
+
 using namespace Easy;
 
 namespace Easy {
