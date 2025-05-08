@@ -1,21 +1,14 @@
-export module Editor.EditorMain;
+module;
+
+#include "Core/MacroUtils.hpp"
+
+export module EditorMain;
 
 import Easy;
-
 using namespace Easy;
 
 namespace Easy {
-    /*export class BackGroundLayer : public Layer {
-    public:
-        BackGroundLayer() : Layer("BackGroundLayer") {}
-
-        void OnUpdate(float) override {
-            RenderCommand::SetClearColor({0.1f, 0.1f, 0.1f, 1.0f});
-            RenderCommand::Clear();
-        }
-    };*/
-
-    export class EditorLayer : public Layer {
+    class EditorLayer : public Layer {
     public:
         EditorLayer() : Layer("EditorLayer"), m_EditorCamera() {}
 
@@ -53,7 +46,7 @@ namespace Easy {
     };
 }
 
-export int main(int argc, char *argv[]) {
+/*export int main(int argc, char *argv[]) {
     auto app = Easy::ApplicationBuilder::Start()
             .Window<OpenGLWindow>()
             .ImGuiLayer<OpenGLImGuiLayer>()
@@ -62,8 +55,19 @@ export int main(int argc, char *argv[]) {
 
     auto editorLayer = MakeArc<EditorLayer>();
     app->PushLayer(editorLayer);
-
-    // editorLayer->ShowDemoWindow = false;
-
     app->Run();
+}*/
+
+void providedNativePrintln
+(JNIEnv *env, jclass clazz, jstring message) {
+    const char *str = env->GetStringUTFChars(message, nullptr);
+    std::cout << "Native print: " << str << std::endl;
+    env->ReleaseStringUTFChars(message, str);
+}
+
+export int main();
+
+namespace Easy {
+    using namespace jni;
+    using namespace Easy::ScriptEngine;
 }
