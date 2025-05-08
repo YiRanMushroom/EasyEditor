@@ -66,8 +66,3 @@ void providedNativePrintln
 }
 
 export int main();
-
-namespace Easy {
-    using namespace jni;
-    using namespace Easy::ScriptEngine;
-}

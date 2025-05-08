@@ -5,7 +5,9 @@ module;
 module EditorMain;
 import Easy;
 
-using namespace Easy;
+import Easy.Scripting.JniBind;
+
+using namespace jni;
 
 namespace Easy {
     void EditorLayer::OnAttach() {
@@ -194,24 +196,14 @@ namespace Easy {
 }
 
 int main() {
-    JavaVMInitArgs vm_args;
-    vm_args.version = Jni_Version_1_6;
     JavaVMOption options[1];
     options[0].optionString = const_cast<char *>("-Djava.class.path=./easy-core-lib-1.0.jar");
-    vm_args.nOptions = 1;
-    vm_args.options = options;
-    vm_args.ignoreUnrecognized = Jni_False;
+    ScriptingEngine::Init({.version = Jni_Version_1_6},
+                          options);
 
-    jint rc = JNI_CreateJavaVM(&pjvm, (void **) &env, &vm_args);
-    if (rc != Jni_Ok) {
-        return -1;
-    }
-    auto jvm = std::make_unique<jni::JvmRef<jni::kDefaultJvm>>(pjvm);
-
-    constexpr static auto ETLib = ECLib::JniType;
+    constexpr static auto ETLib = ScriptingEngine::Lib::JniType;
 
     constexpr static StaticRef<ETLib> libStaticRef;
-    libStaticRef.Call<"Init">();
 
     LocalObject easyLibClassObj = libStaticRef.Call<"GetClass">("com.easy.Lib");
     libStaticRef.Call<"PrintClassInfo">(easyLibClassObj);
@@ -240,6 +232,8 @@ int main() {
     auto obj2 = std::move(targetMethodGlobalRef);
 
     EZ_ASSERT(targetMethod == targetMethod2);
+
+    ScriptingEngine::Shutdown();
 
     return 0;
 }
