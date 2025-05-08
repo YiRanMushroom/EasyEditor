@@ -201,21 +201,17 @@ int main() {
     ScriptingEngine::Init({.version = JNI_VERSION_1_6},
                           options);
 
-    constexpr static auto ETLib = ScriptingEngine::Lib::JniType;
-
-    constexpr static StaticRef<ETLib> libStaticRef;
-
-    LocalObject<JTClass> easyLibClassObj = libStaticRef.Call<"GetClass">("com.easy.Lib");
-    libStaticRef.Call<"PrintClassInfo">(easyLibClassObj);
-    LocalObject<JTClass> jstringClassObj = libStaticRef.Call<"GetClass">("java.lang.String");
-    LocalObject<JTClass> jclassClassObj = libStaticRef.Call<"GetClass">("java.lang.Class");
+    GlobalObject<JTClass> &easyLibClassObj = *ScriptingEngine::Lib::LibClassObj;
+    ScriptingEngine::Lib::PrintClassInfo((static_cast<jobject>(easyLibClassObj)));
+    LocalObject<JTClass> jstringClassObj = ScriptingEngine::Lib::GetClass("java.lang.String");
+    LocalObject<JTClass> jclassClassObj = ScriptingEngine::Lib::GetClass("java.lang.Class");
 
     LocalArray<jobject, 1, JTClass> paraArray = ScriptingEngine::Lib::CreateObjectArray<LocalArray<jobject, 1,
         JTClass>>(
         easyLibClassObj, jstringClassObj, jclassClassObj);
 
     LocalObject<JTMethod> targetMethod = ScriptingEngine::Lib::GetMethodFromClassAndFunctionName(
-        easyLibClassObj, "GetMethodFromClassAndFunctionName",
+        static_cast<jobject>(easyLibClassObj), "GetMethodFromClassAndFunctionName",
         paraArray);
 
     LocalString targetMethodName{"GetMethodFromClassAndFunctionName"};
