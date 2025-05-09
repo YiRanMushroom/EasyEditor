@@ -231,8 +231,6 @@ public:
     JConstructor(jmethodID id) : id(id) {}
 
     jobject Invoke(JNIEnv *env, jclass cls, Args... args) {
-        // EZ_CORE_ASSERT(id != nullptr, "Constructor not initialized");
-        // return env->NewObject(cls, id, args.ToJava()...);
         std::array<jvalue, sizeof...(Args)> jniArgs{
             jvalue{args.ToJvalue()}...
         };
@@ -246,7 +244,6 @@ public:
         return ScriptingEngine::MethodResolver::ResolveSigExact<void(Args...)>();
     }
 
-private:
     jmethodID id = nullptr;
 };
 
@@ -285,6 +282,11 @@ public:
         EZ_CORE_ASSERT(static_cast<jobject>(m_Object) != nullptr, "Failed to create TestStruct");
     }
 
+    TestStruct(JString str) : TestStruct(s_Constructor4.Invoke(ScriptingEngine::GetEnv(),
+                                                                  static_cast<jclass>(static_cast<jobject>(*s_ClassPtr)), str)) {
+        EZ_CORE_ASSERT(static_cast<jobject>(m_Object) != nullptr, "Failed to create TestStruct");
+    }
+
     static void Init() {
         s_ClassPtr = std::make_unique<GlobalObject<JTClass>>(
             PromoteToGlobal{}, static_cast<jobject>(ScriptingEngine::Lib::GetClass("com/easy/Test"))
@@ -313,12 +315,21 @@ public:
             "<init>", sig3.Data);
         EZ_ASSERT(constructorId3 != nullptr, "Constructor not found");
         s_Constructor3 = {constructorId3};
+
+        constexpr auto sig4 = decltype(s_Constructor4)::GetSignature();
+        static_assert(sig4 == "(Ljava/lang/String;)V"_sl);
+        jmethodID constructorId4 = ScriptingEngine::GetEnv()->GetMethodID(
+            static_cast<jclass>(static_cast<jobject>(*s_ClassPtr)),
+            "<init>", sig4.Data);
+        EZ_ASSERT(constructorId4 != nullptr, "Constructor not found");
+        s_Constructor4 = {constructorId4};
     }
 
 private:
     inline static JConstructor<TestStruct(JString, Jint, JDouble)> s_Constructor1;
     inline static JConstructor<TestStruct(Jint)> s_Constructor2;
     inline static JConstructor<TestStruct()> s_Constructor3;
+    inline static JConstructor<TestStruct(JString)> s_Constructor4;
 
     inline static std::unique_ptr<GlobalObject<JTClass>> s_ClassPtr;
 
@@ -333,7 +344,9 @@ void RunJavaTests() {
     TestStruct::Init();
 
     TestStruct testStruct{
-        42
+        JString{"Hello World"},
+        Jint{43},
+        JDouble{3.14}
     };
 
     LocalObject<TestStruct::Definition> m_Local{testStruct.ToJava()};
