@@ -7,6 +7,8 @@ module EditorMain;
 import Easy;
 import Easy.Scripting.JniBind;
 
+import Easy.Scripting.JTypes;
+
 using namespace jni;
 
 using namespace Easy::ScriptingEngine::Util::TypeDefinitions;
@@ -197,8 +199,8 @@ namespace Easy {
     }
 }
 
-void nativePrintln(JNIEnv *env, jclass clazz, std::string str) {
-    std::cout << "native: " << str << std::endl;
+void anotherNativePrintlln(JNIEnv *, jclass clazz, ScriptingEngine::JTypes::JString str) {
+    std::cout << "anotherNative: " << str.CStr() << std::endl;
 }
 
 int main() {
@@ -217,11 +219,30 @@ int main() {
     //     "(Ljava/lang/String;)V"
     // );
 
-    bool cs = Lib::RegisterSimpleClassStaticFunction<nativePrintln>(
-        static_cast<jclass>(static_cast<jobject>(easyLibClassObj)),
-        "NativePrintlnImpl");
+    // bool cs = Lib::RegisterSimpleClassStaticFunction<anotherNativePrintlln>(
+    //     static_cast<jclass>(static_cast<jobject>(easyLibClassObj)),
+    //     "NativePrintlnImpl");
 
-    std::cout << "cs: " << cs << std::endl;
+    // std::cout << "cs: " << cs << std::endl;
+
+    {
+        using namespace ScriptingEngine::MethodResolver;
+        constexpr static auto* func_to_reg = WrapNativeToJNIStaticFunction<anotherNativePrintlln>();
+
+        constexpr static auto sig = ResolveSigStatic<decltype(anotherNativePrintlln)>();
+
+        JNINativeMethod method{
+            const_cast<char *>("NativePrintlnImpl"),
+            const_cast<char *>(sig.Data),
+            reinterpret_cast<void *>(func_to_reg)
+        };
+
+        ScriptingEngine::env->RegisterNatives(
+                   static_cast<jclass>(static_cast<jobject>(easyLibClassObj)),
+                   &method,
+                   1
+               ) == JNI_OK;
+    }
 
     ScriptingEngine::Lib::PrintClassInfo((static_cast<jobject>(easyLibClassObj)));
     LocalObject<JTClass> jstringClassObj = ScriptingEngine::Lib::GetClass("java.lang.String");
