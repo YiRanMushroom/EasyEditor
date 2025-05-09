@@ -11,8 +11,6 @@ import Easy.Scripting.JTypes;
 
 using namespace jni;
 
-using namespace Easy::ScriptingEngine::Util::TypeDefinitions;
-
 namespace Easy {
     void EditorLayer::OnAttach() {
         Layer::OnAttach();
@@ -199,79 +197,37 @@ namespace Easy {
     }
 }
 
-void anotherNativePrintlln(JNIEnv *, jclass clazz, ScriptingEngine::JTypes::JString str) {
-    std::cout << "anotherNative: " << str.CStr() << std::endl;
-}
+void RunJavaTests();
 
 int main() {
-    // std::cout << .Data << std::endl;
+    Log::Init();
 
     JavaVMOption options[1];
     options[0].optionString = const_cast<char *>("-Djava.class.path=./easy-core-lib-1.0.jar");
+
     ScriptingEngine::Init({.version = JNI_VERSION_1_6},
                           options);
 
-    GlobalObject<JTClass> &easyLibClassObj = *ScriptingEngine::Lib::LibClassObj;
+    // ScriptingEngine::Lib::PrintClassInfo(ScriptingEngine::Lib::GetClass("com.easy.Lib"));
 
-    // bool cs = Lib::RegisterNativeFunctionRaw<LibClassF, nativePrintln>(
-    //     static_cast<jclass>(static_cast<jobject>(easyLibClassObj)),
-    //     "NativePrintlnImpl",
-    //     "(Ljava/lang/String;)V"
-    // );
-
-    // bool cs = Lib::RegisterSimpleClassStaticFunction<anotherNativePrintlln>(
-    //     static_cast<jclass>(static_cast<jobject>(easyLibClassObj)),
-    //     "NativePrintlnImpl");
-
-    // std::cout << "cs: " << cs << std::endl;
-
-    {
-        using namespace ScriptingEngine::MethodResolver;
-        constexpr static auto* func_to_reg = WrapNativeToJNIStaticFunction<anotherNativePrintlln>();
-
-        constexpr static auto sig = ResolveSigStatic<decltype(anotherNativePrintlln)>();
-
-        JNINativeMethod method{
-            const_cast<char *>("NativePrintlnImpl"),
-            const_cast<char *>(sig.Data),
-            reinterpret_cast<void *>(func_to_reg)
-        };
-
-        ScriptingEngine::env->RegisterNatives(
-                   static_cast<jclass>(static_cast<jobject>(easyLibClassObj)),
-                   &method,
-                   1
-               ) == JNI_OK;
-    }
-
-    ScriptingEngine::Lib::PrintClassInfo((static_cast<jobject>(easyLibClassObj)));
-    LocalObject<JTClass> jstringClassObj = ScriptingEngine::Lib::GetClass("java.lang.String");
-    LocalObject<JTClass> jclassClassObj = ScriptingEngine::Lib::GetClass("java.lang.Class");
-
-    LocalArray<jobject, 1, JTClass> paraArray = ScriptingEngine::Lib::CreateObjectArray<LocalArray<jobject, 1,
-        JTClass>>(
-        easyLibClassObj, jstringClassObj, jclassClassObj);
-
-    LocalObject<JTMethod> targetMethod = ScriptingEngine::Lib::GetMethodFromClassAndFunctionName(
-        static_cast<jobject>(easyLibClassObj), "GetMethodFromClassAndFunctionName",
-        paraArray);
-
-    LocalString targetMethodName{"GetMethodFromClassAndFunctionName"};
-
-    LocalArray<jobject, 1, JTObject> anotherParaArray
-            = ScriptingEngine::Lib::CreateObjectArray<LocalArray<jobject, 1, JTObject>>(
-                easyLibClassObj, static_cast<jstring>(targetMethodName), paraArray);
-
-    LocalObject<JTObject> targetMethod2 =
-            ScriptingEngine::Lib::CallStaticMethod(targetMethod, anotherParaArray);
-
-    GlobalObject<JTMethod> targetMethodGlobalRef{PromoteToGlobal{}, static_cast<jobject>(targetMethod)};
-
-    auto obj2 = std::move(targetMethodGlobalRef);
-
-    EZ_ASSERT(targetMethod == targetMethod2);
+    RunJavaTests();
 
     ScriptingEngine::Shutdown();
 
     return 0;
+}
+
+void RunJavaTests() {
+    using namespace ScriptingEngine;
+    using namespace Lib;
+    ScriptingEngine::Lib::PrintClassInfo(ScriptingEngine::Lib::GetClass("com.easy.Test"));
+
+    constexpr auto sig = MethodResolver::ResolveSigExact<void(JTypes::JString, JTypes::Jint, JTypes::JDouble)>();
+
+    static_assert(sig == "(Ljava/lang/String;ILjava/lang/Double;)V"_sl);
+
+    jmethodID constructor = GetEnv()->GetMethodID(static_cast<jclass>(static_cast<jobject>(GetClass("com.easy.Test"))),
+                                                 "<init>", "(Ljava/lang/String;ILjava/lang/Double;)V");
+
+    EZ_ASSERT(constructor != nullptr, "Constructor not found");
 }

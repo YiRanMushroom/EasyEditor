@@ -50,7 +50,6 @@ namespace Easy {
     auto app = Easy::ApplicationBuilder::Start()
             .Window<OpenGLWindow>()
             .ImGuiLayer<OpenGLImGuiLayer>()
-            .CommandLineArgs({argc, argv})
             .Build();
 
     auto editorLayer = MakeArc<EditorLayer>();
