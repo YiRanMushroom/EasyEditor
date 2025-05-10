@@ -201,11 +201,7 @@ void RunJavaTests();
 int main() {
     Log::Init();
 
-    JavaVMOption options[1];
-    options[0].optionString = const_cast<char *>("-Djava.class.path=./easy-core-lib-1.0.jar");
-
-    ScriptingEngine::Init({.version = JNI_VERSION_1_6},
-                          options);
+    ScriptingEngine::Init();
 
     RunJavaTests();
 
@@ -226,11 +222,12 @@ public:
         "com/easy/Test",
     };
 
-    constexpr static jobject(JNIEnv::*CallStaticMethodA)(jclass, jmethodID, const jvalue *) = &JNIEnv::CallStaticObjectMethodA;
+    constexpr static jobject (JNIEnv::*CallStaticMethodA)(jclass, jmethodID, const jvalue *) = &
+            JNIEnv::CallStaticObjectMethodA;
 
     using JavaType = jobject;
 
-    jobject ToJava() const {
+    [[nodiscard]] jobject ToJava() const {
         return m_Ref.GetRawObject();
     }
 
@@ -275,10 +272,10 @@ public:
 
     static TestStruct Create(std::string str, int i, double d) {
         return s_StaticCreateMethod.Invoke(ScriptingEngine::GetEnv(),
-                                      s_ClassRef.GetObjectAs<jclass>(),
-                                      JString{str},
-                                      Jint{i},
-                                      Jdouble{d});
+                                           s_ClassRef.GetObjectAs<jclass>(),
+                                           JString{str},
+                                           Jint{i},
+                                           Jdouble{d});
     }
 
     [[nodiscard]] JString ToString() const {
