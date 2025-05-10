@@ -26,6 +26,10 @@ namespace Easy {
 
         void OnSceneUpdate(float ts);
 
+        void RenderJavaTests();
+
+        void RenderProfiles();
+
     public:
         bool ShowDemoWindow = false;
 
@@ -46,16 +50,6 @@ namespace Easy {
     };
 }
 
-/*export int main(int argc, char *argv[]) {
-    auto app = Easy::ApplicationBuilder::Start()
-            .Window<OpenGLWindow>()
-            .ImGuiLayer<OpenGLImGuiLayer>()
-            .Build();
-
-    auto editorLayer = MakeArc<EditorLayer>();
-    app->PushLayer(editorLayer);
-    app->Run();
-}*/
 
 void providedNativePrintln
 (JNIEnv *env, jclass clazz, jstring message) {
@@ -64,4 +58,4 @@ void providedNativePrintln
     env->ReleaseStringUTFChars(message, str);
 }
 
-export int main();
+export int main(int argc, char *argv[]);

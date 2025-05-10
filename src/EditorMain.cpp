@@ -49,6 +49,9 @@ namespace Easy {
         m_SceneFramebuffer->Unbind();
     }
 
+
+    void RenderProfiles();
+
     void EditorLayer::OnImGuiRender() {
         Layer::OnImGuiRender();
         // We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
@@ -143,6 +146,10 @@ namespace Easy {
             ImGui::ShowDemoWindow(&ShowDemoWindow);
 
         RenderViewport();
+
+        RenderJavaTests();
+
+        RenderProfiles();
     }
 
     void EditorLayer::OnEvent(Event &event) {
@@ -194,11 +201,35 @@ namespace Easy {
             Renderer2D::DrawQuad(transform.Translation, transform.Scale, sprite.Color);
         }
     }
+
+    void EditorLayer::RenderJavaTests() {
+        EZ_PROFILE_FUNCTION();
+
+        constexpr static Class ImGuiDefinition{
+            "com/easy/Test/ImGuiTests",
+            Constructor {},
+            Method{"Render", Return{} ,Params{}}
+        };
+
+        static GlobalObject<ImGuiDefinition> ImGuiTests{};
+
+        ImGuiTests.Call<"Render">();
+    }
+
+    void EditorLayer::RenderProfiles() {
+        ImGui::Begin("ProfileInfo");
+        for (const auto &info: g_LastProfileInfos) {
+            char buffer[256];
+            info.writeTo(buffer);
+            ImGui::Text("%s", buffer);
+        }
+        ImGui::End();
+    }
 }
 
 void RunJavaTests();
 
-int main() {
+/*int main(int argc, char *argv[]) {
     Log::Init();
 
     ScriptingEngine::Init();
@@ -208,24 +239,33 @@ int main() {
     ScriptingEngine::Shutdown();
 
     return 0;
-}
+}*/
 
+int main(int argc, char *argv[]) {
+    auto app = Easy::ApplicationBuilder::Start()
+            .Window<OpenGLWindow>()
+            .ImGuiLayer<OpenGLImGuiLayer>()
+            .Build();
+
+    auto editorLayer = MakeArc<EditorLayer>();
+    app->PushLayer(editorLayer);
+    app->GetWindow().SetVSync(true);
+    app->Run();
+}
 
 using namespace ScriptingEngine::JTypes;
 
-struct TestStruct {
+
+
+struct TestStruct : public InjectJObject {
 public:
-    constexpr static StringLiteral SimpleName = "com/easy/Test";
+    constexpr static StringLiteral SimpleName = "com/easy/Test/BasicTests";
     constexpr static StringLiteral FullName = ScriptingEngine::JTypes::MakeFullName(SimpleName);
 
     constexpr static Class Definition{
-        "com/easy/Test",
+        "com/easy/Test/BasicTests",
     };
 
-    constexpr static jobject (JNIEnv::*CallStaticMethodA)(jclass, jmethodID, const jvalue *) = &
-            JNIEnv::CallStaticObjectMethodA;
-
-    using JavaType = jobject;
 
     [[nodiscard]] jobject ToJava() const {
         return m_Ref.GetRawObject();
@@ -259,7 +299,7 @@ public:
     }
 
     static void Init() {
-        s_ClassRef.SetFrom(ScriptingEngine::Lib::GetClass("com.easy.Test"));
+        s_ClassRef.SetFrom(ScriptingEngine::Lib::GetClass("com.easy.Test.BasicTests"));
 
         s_Constructor1.Init(s_ClassRef.GetObjectAs<jclass>());
         s_Constructor2.Init(s_ClassRef.GetObjectAs<jclass>());
@@ -299,19 +339,20 @@ private:
 void RunJavaTests() {
     using namespace ScriptingEngine;
     using namespace Lib;
-    ScriptingEngine::Lib::PrintClassInfo(ScriptingEngine::Lib::GetClass("com.easy.Test"));
-
-    TestStruct::Init();
-
-    TestStruct testStruct{
-        JString{"Hello World"},
-        Jint{43},
-        JDouble{3.14}
-    };
-
-    JString res = testStruct.ToString();
-
-    std::cout << TestStruct::Create("Hi Mikey", 2005, 1.17).ToString().Get() << std::endl;
-
-    std::cout << res.Get() << std::endl;
+    ScriptingEngine::Lib::PrintClassInfo(ScriptingEngine::Lib::GetClass("com.easy.ImGui"));
+    // ScriptingEngine::Lib::PrintClassInfo(ScriptingEngine::Lib::GetClass("com.easy.Test.BasicTests"));
+    //
+    // TestStruct::Init();
+    //
+    // TestStruct testStruct{
+    //     JString{"Hello World"},
+    //     Jint{43},
+    //     JDouble{3.14}
+    // };
+    //
+    // JString res = testStruct.ToString();
+    //
+    // std::cout << TestStruct::Create("Hi Mikey", 2005, 1.17).ToString().Get() << std::endl;
+    //
+    // std::cout << res.Get() << std::endl;
 }
