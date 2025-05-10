@@ -6,7 +6,6 @@ module EditorMain;
 
 import Easy;
 import Easy.Scripting.JniBind;
-
 import Easy.Scripting.JTypes;
 
 using namespace jni;
@@ -217,35 +216,6 @@ int main() {
     return 0;
 }
 
-template<typename>
-class JConstructor {
-    static_assert(false, "JConstructor is not specialized");
-};
-
-// constructor hold a methodId
-template<typename ClassType, typename... Args>
-class JConstructor<ClassType(Args...)> {
-public:
-    JConstructor() = default;
-
-    JConstructor(jmethodID id) : id(id) {}
-
-    jobject Invoke(JNIEnv *env, jclass cls, Args... args) {
-        std::array<jvalue, sizeof...(Args)> jniArgs{
-            jvalue{args.ToJvalue()}...
-        };
-
-        return env->NewObjectA(
-            cls, id,
-            jniArgs.data());
-    }
-
-    consteval static auto GetSignature() {
-        return ScriptingEngine::MethodResolver::ResolveSigExact<void(Args...)>();
-    }
-
-    jmethodID id = nullptr;
-};
 
 using namespace ScriptingEngine::JTypes;
 
@@ -259,81 +229,55 @@ public:
     using JavaType = jobject;
 
     jobject ToJava() const {
-        return static_cast<jobject>(m_Object);
+        return m_Ref.GetRawObject();
     }
 
-    TestStruct() : m_Object{
-        NewRef{},
-        s_Constructor3.Invoke(ScriptingEngine::GetEnv(), static_cast<jclass>(static_cast<jobject>(*s_ClassPtr)))
+    TestStruct() : m_Ref{
+        s_Constructor3.Invoke(ScriptingEngine::GetEnv(), s_ClassRef.GetObjectAs<jclass>())
     } {
-        EZ_CORE_ASSERT(static_cast<jobject>(m_Object) != nullptr, "Failed to create TestStruct");
+        EZ_CORE_ASSERT(m_Ref.NotNull(), "Failed to create TestStruct");
     }
 
-    TestStruct(jobject obj) : m_Object{NewRef{}, obj} {}
+    TestStruct(jobject obj) : m_Ref{obj} {
+        EZ_CORE_ASSERT(m_Ref.NotNull(), "Failed to create TestStruct");
+    }
 
     TestStruct(JString str, Jint i, JDouble d)
         : TestStruct(s_Constructor1.Invoke(ScriptingEngine::GetEnv(),
-                                           static_cast<jclass>(static_cast<jobject>(*s_ClassPtr)), str, i, d)) {
-        EZ_CORE_ASSERT(static_cast<jobject>(m_Object) != nullptr, "Failed to create TestStruct");
+                                           s_ClassRef.GetObjectAs<jclass>(), str, i, d)) {
+        EZ_CORE_ASSERT(m_Ref.NotNull(), "Failed to create TestStruct");
     }
 
     TestStruct(Jint i) : TestStruct(s_Constructor2.Invoke(ScriptingEngine::GetEnv(),
-                                                          static_cast<jclass>(static_cast<jobject>(*s_ClassPtr)), i)) {
-        EZ_CORE_ASSERT(static_cast<jobject>(m_Object) != nullptr, "Failed to create TestStruct");
+                                                          s_ClassRef.GetObjectAs<jclass>(), i)) {
+        EZ_CORE_ASSERT(m_Ref.NotNull(), "Failed to create TestStruct");
     }
 
     TestStruct(JString str) : TestStruct(s_Constructor4.Invoke(ScriptingEngine::GetEnv(),
-                                                                  static_cast<jclass>(static_cast<jobject>(*s_ClassPtr)), str)) {
-        EZ_CORE_ASSERT(static_cast<jobject>(m_Object) != nullptr, "Failed to create TestStruct");
+                                                               s_ClassRef.GetObjectAs<jclass>(),
+                                                               str)) {
+        EZ_CORE_ASSERT(m_Ref.NotNull(), "Failed to create TestStruct");
     }
 
     static void Init() {
-        s_ClassPtr = std::make_unique<GlobalObject<JTClass>>(
-            PromoteToGlobal{}, static_cast<jobject>(ScriptingEngine::Lib::GetClass("com/easy/Test"))
-        );
+        s_ClassRef.SetFrom(ScriptingEngine::Lib::GetClass("com.easy.Test"));
 
-        constexpr auto sig1 = decltype(s_Constructor1)::GetSignature();
-        static_assert(sig1 == "(Ljava/lang/String;ILjava/lang/Double;)V"_sl);
-        jmethodID constructorId1 = ScriptingEngine::GetEnv()->GetMethodID(
-            static_cast<jclass>(static_cast<jobject>(*s_ClassPtr)),
-            "<init>", sig1.Data);
-        EZ_ASSERT(constructorId1 != nullptr, "Constructor not found");
-        s_Constructor1 = {constructorId1};
-
-        constexpr auto sig2 = decltype(s_Constructor2)::GetSignature();
-        static_assert(sig2 == "(I)V"_sl);
-        jmethodID constructorId2 = ScriptingEngine::GetEnv()->GetMethodID(
-            static_cast<jclass>(static_cast<jobject>(*s_ClassPtr)),
-            "<init>", sig2.Data);
-        EZ_ASSERT(constructorId2 != nullptr, "Constructor not found");
-        s_Constructor2 = {constructorId2};
-
-        constexpr auto sig3 = decltype(s_Constructor3)::GetSignature();
-        static_assert(sig3 == "()V"_sl);
-        jmethodID constructorId3 = ScriptingEngine::GetEnv()->GetMethodID(
-            static_cast<jclass>(static_cast<jobject>(*s_ClassPtr)),
-            "<init>", sig3.Data);
-        EZ_ASSERT(constructorId3 != nullptr, "Constructor not found");
-        s_Constructor3 = {constructorId3};
-
-        constexpr auto sig4 = decltype(s_Constructor4)::GetSignature();
-        static_assert(sig4 == "(Ljava/lang/String;)V"_sl);
-        jmethodID constructorId4 = ScriptingEngine::GetEnv()->GetMethodID(
-            static_cast<jclass>(static_cast<jobject>(*s_ClassPtr)),
-            "<init>", sig4.Data);
-        EZ_ASSERT(constructorId4 != nullptr, "Constructor not found");
-        s_Constructor4 = {constructorId4};
+        s_Constructor1.Init(s_ClassRef.GetObjectAs<jclass>());
+        s_Constructor2.Init(s_ClassRef.GetObjectAs<jclass>());
+        s_Constructor3.Init(s_ClassRef.GetObjectAs<jclass>());
+        s_Constructor4.Init(s_ClassRef.GetObjectAs<jclass>());
     }
 
 private:
-    inline static JConstructor<TestStruct(JString, Jint, JDouble)> s_Constructor1;
-    inline static JConstructor<TestStruct(Jint)> s_Constructor2;
-    inline static JConstructor<TestStruct()> s_Constructor3;
-    inline static JConstructor<TestStruct(JString)> s_Constructor4;
+    ScriptingEngine::JavaGlobalArc<Definition> m_Ref;
 
-    inline static std::unique_ptr<GlobalObject<JTClass>> s_ClassPtr;
+private:
+    inline static ScriptingEngine::JavaGlobalArc<JTClass> s_ClassRef;
 
-    LocalObject<Definition> m_Object;
+    inline static ScriptingEngine::JConstructor<TestStruct(JString, Jint, JDouble)> s_Constructor1;
+    inline static ScriptingEngine::JConstructor<TestStruct(Jint)> s_Constructor2;
+    inline static ScriptingEngine::JConstructor<TestStruct()> s_Constructor3;
+    inline static ScriptingEngine::JConstructor<TestStruct(JString)> s_Constructor4;
 };
 
 void RunJavaTests() {
