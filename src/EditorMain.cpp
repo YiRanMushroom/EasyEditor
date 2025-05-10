@@ -207,8 +207,6 @@ int main() {
     ScriptingEngine::Init({.version = JNI_VERSION_1_6},
                           options);
 
-    // ScriptingEngine::Lib::PrintClassInfo(ScriptingEngine::Lib::GetClass("com.easy.Lib"));
-
     RunJavaTests();
 
     ScriptingEngine::Shutdown();
@@ -221,10 +219,22 @@ using namespace ScriptingEngine::JTypes;
 
 struct TestStruct {
 public:
+    constexpr static StringLiteral SimpleName = "com/easy/Test";
+    constexpr static StringLiteral FullName = ScriptingEngine::JTypes::MakeFullName(SimpleName);
+
     constexpr static Class Definition{
         "com/easy/Test",
         Method{"ToString", Return{jstring{}}, Params{}}
     };
+
+    constexpr static Class StaticDefinition{
+        "com/easy/Test",
+        Static{
+            Method{"Create", Return{Definition}, Params{jstring{}, jint{}, jdouble{}}}
+        }
+    };
+
+    constexpr static jobject(JNIEnv::*CallStaticMethodA)(jclass, jmethodID, const jvalue *) = &JNIEnv::CallStaticObjectMethodA;
 
     using JavaType = jobject;
 
@@ -266,6 +276,21 @@ public:
         s_Constructor2.Init(s_ClassRef.GetObjectAs<jclass>());
         s_Constructor3.Init(s_ClassRef.GetObjectAs<jclass>());
         s_Constructor4.Init(s_ClassRef.GetObjectAs<jclass>());
+        s_ToStringMethod.Init(s_ClassRef.GetObjectAs<jclass>(), "ToString");
+
+        s_StaticCreateMethod.Init(s_ClassRef.GetObjectAs<jclass>(), "Create");
+    }
+
+    static TestStruct Create(std::string str, int i, double d) {
+        return s_StaticCreateMethod.Invoke(ScriptingEngine::GetEnv(),
+                                      s_ClassRef.GetObjectAs<jclass>(),
+                                      JString{str},
+                                      Jint{i},
+                                      Jdouble{d});
+    }
+
+    [[nodiscard]] JString ToString() const {
+        return JString{Owned{}, s_ToStringMethod.Invoke(ScriptingEngine::GetEnv(), m_Ref.GetObjectAs<jobject>())};
     }
 
 private:
@@ -278,6 +303,8 @@ private:
     inline static ScriptingEngine::JConstructor<TestStruct(Jint)> s_Constructor2;
     inline static ScriptingEngine::JConstructor<TestStruct()> s_Constructor3;
     inline static ScriptingEngine::JConstructor<TestStruct(JString)> s_Constructor4;
+    inline static ScriptingEngine::JInstanceMethod<JString(TestStruct)> s_ToStringMethod;
+    inline static ScriptingEngine::JStaticMethod<TestStruct(JString, Jint, Jdouble)> s_StaticCreateMethod;
 };
 
 void RunJavaTests() {
@@ -293,13 +320,9 @@ void RunJavaTests() {
         JDouble{3.14}
     };
 
-    LocalObject<TestStruct::Definition> m_Local{testStruct.ToJava()};
+    JString res = testStruct.ToString();
 
-    EZ_ASSERT(static_cast<jobject>(m_Local) != nullptr, "Failed to create TestStruct");
+    std::cout << TestStruct::Create("Hi Mikey", 2005, 1.17).ToString().Get() << std::endl;
 
-    LocalString toStringRes = m_Local.Call<"ToString">();
-
-    EZ_ASSERT(static_cast<jobject>(static_cast<jstring>(toStringRes)) != nullptr, "Failed to call ToString");
-
-    std::cout << "Result: " << toStringRes.Pin().ToString() << std::endl;
+    std::cout << res.Get() << std::endl;
 }
