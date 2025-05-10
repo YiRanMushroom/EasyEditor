@@ -224,14 +224,6 @@ public:
 
     constexpr static Class Definition{
         "com/easy/Test",
-        Method{"ToString", Return{jstring{}}, Params{}}
-    };
-
-    constexpr static Class StaticDefinition{
-        "com/easy/Test",
-        Static{
-            Method{"Create", Return{Definition}, Params{jstring{}, jint{}, jdouble{}}}
-        }
     };
 
     constexpr static jobject(JNIEnv::*CallStaticMethodA)(jclass, jmethodID, const jvalue *) = &JNIEnv::CallStaticObjectMethodA;
