@@ -7,6 +7,7 @@ module EditorMain;
 import Easy;
 import Easy.Scripting.JniBind;
 import Easy.Scripting.JTypes;
+import Easy.Scripting.KNativeFunctions;
 
 using namespace jni;
 
@@ -207,8 +208,8 @@ namespace Easy {
 
         constexpr static Class ImGuiDefinition{
             "com/easy/Test/ImGuiTests",
-            Constructor {},
-            Method{"Render", Return{} ,Params{}}
+            Constructor{},
+            Method{"Render", Return{}, Params{}}
         };
 
         static GlobalObject<ImGuiDefinition> ImGuiTests{};
@@ -229,19 +230,19 @@ namespace Easy {
 
 void RunJavaTests();
 
-/*int main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
     Log::Init();
 
     ScriptingEngine::Init();
 
-    RunJavaTests();
+    // RunJavaTests();
 
     ScriptingEngine::Shutdown();
 
     return 0;
-}*/
+}
 
-int main(int argc, char *argv[]) {
+/*int main(int argc, char *argv[]) {
     auto app = Easy::ApplicationBuilder::Start()
             .Window<OpenGLWindow>()
             .ImGuiLayer<OpenGLImGuiLayer>()
@@ -251,11 +252,9 @@ int main(int argc, char *argv[]) {
     app->PushLayer(editorLayer);
     app->GetWindow().SetVSync(true);
     app->Run();
-}
+}*/
 
 using namespace ScriptingEngine::JTypes;
-
-
 
 struct TestStruct : public InjectJObject {
 public:
@@ -336,23 +335,30 @@ private:
     inline static ScriptingEngine::JStaticMethod<TestStruct(JString, Jint, Jdouble)> s_StaticCreateMethod;
 };
 
+struct TestReportIntNativeBuffer : ScriptingEngine::AutoManagedBufferBase {
+    int value;
+
+    virtual ~TestReportIntNativeBuffer() override {
+        // EZ_CORE_INFO("TestReportIntNativeBuffer destructor called: {}", value);
+    }
+
+    TestReportIntNativeBuffer(int v) : value(v) {}
+};
+
 void RunJavaTests() {
     using namespace ScriptingEngine;
     using namespace Lib;
-    ScriptingEngine::Lib::PrintClassInfo(ScriptingEngine::Lib::GetClass("com.easy.ImGui"));
-    // ScriptingEngine::Lib::PrintClassInfo(ScriptingEngine::Lib::GetClass("com.easy.Test.BasicTests"));
-    //
-    // TestStruct::Init();
-    //
-    // TestStruct testStruct{
-    //     JString{"Hello World"},
-    //     Jint{43},
-    //     JDouble{3.14}
-    // };
-    //
-    // JString res = testStruct.ToString();
-    //
-    // std::cout << TestStruct::Create("Hi Mikey", 2005, 1.17).ToString().Get() << std::endl;
-    //
-    // std::cout << res.Get() << std::endl;
+
+    constexpr static Class NativeBufferTests{
+        "com/easy/Test/NativeBufferTests",
+        Static{
+            Method{"AddPtr", Return{}, Params{jlong{}}},
+            Method{"RemoveAll", Return{}, Params{}},
+        }
+    };
+
+    for (int i = 0; i < 10000; i++) {
+        jni::StaticRef<NativeBufferTests>().Call<"AddPtr">(reinterpret_cast<jlong>(new TestReportIntNativeBuffer(i)));
+        jni::StaticRef<NativeBufferTests>().Call<"RemoveAll">();
+    }
 }
