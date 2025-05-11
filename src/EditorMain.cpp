@@ -230,33 +230,10 @@ namespace Easy {
 
 void RunJavaTests();
 
-int main(int argc, char *argv[]) {
-    Log::Init();
-
-    ScriptingEngine::Init();
-
-    // RunJavaTests();
-
-    ScriptingEngine::Shutdown();
-
-    return 0;
-}
-
-/*int main(int argc, char *argv[]) {
-    auto app = Easy::ApplicationBuilder::Start()
-            .Window<OpenGLWindow>()
-            .ImGuiLayer<OpenGLImGuiLayer>()
-            .Build();
-
-    auto editorLayer = MakeArc<EditorLayer>();
-    app->PushLayer(editorLayer);
-    app->GetWindow().SetVSync(true);
-    app->Run();
-}*/
 
 using namespace ScriptingEngine::JTypes;
 
-struct TestStruct : public InjectJObject {
+/*struct TestStruct : public InjectJObject {
 public:
     constexpr static StringLiteral SimpleName = "com/easy/Test/BasicTests";
     constexpr static StringLiteral FullName = ScriptingEngine::JTypes::MakeFullName(SimpleName);
@@ -318,7 +295,9 @@ public:
     }
 
     [[nodiscard]] JString ToString() const {
-        return JString{Owned{}, s_ToStringMethod.Invoke(ScriptingEngine::GetEnv(), m_Ref.GetObjectAs<jobject>())};
+        return JString{
+            NewRef{}, s_ToStringMethod.Invoke(ScriptingEngine::GetEnv(), m_Ref.GetObjectAs<jobject>())
+        };
     }
 
 private:
@@ -333,7 +312,7 @@ private:
     inline static ScriptingEngine::JConstructor<TestStruct(JString)> s_Constructor4;
     inline static ScriptingEngine::JInstanceMethod<JString(TestStruct)> s_ToStringMethod;
     inline static ScriptingEngine::JStaticMethod<TestStruct(JString, Jint, Jdouble)> s_StaticCreateMethod;
-};
+};*/
 
 struct TestReportIntNativeBuffer : ScriptingEngine::AutoManagedBufferBase {
     int value;
@@ -345,20 +324,253 @@ struct TestReportIntNativeBuffer : ScriptingEngine::AutoManagedBufferBase {
     TestReportIntNativeBuffer(int v) : value(v) {}
 };
 
+using namespace ScriptingEngine;
+using namespace ScriptingEngine::KNativeFunctions;
+
+template<size_t N>
+class KNativeFunctionImplSized : ScriptingEngine::AutoManagedBufferBase {
+    static_assert(N <= KNativeFunctions::MaxArgCount, "N must be less than or equal to MaxArgCount");
+
+public:
+    constexpr static StringLiteral SimpleName = "com/easy/NativeFunction"_sl + ToStringLiteral<N>();
+    constexpr static StringLiteral FullName = ScriptingEngine::JTypes::MakeFullName(SimpleName);
+
+    constexpr static Class Definition{
+        SimpleName.Data,
+        Constructor{jlong{}},
+        Method{
+            "CastToInterface", Return{KNativeFunctions::KNativeFunctionInterface<N>::Definition},
+            Params{}
+        },
+        Method{
+            "invoke", Return{JObject::Definition}, GetParamsOfArgLength<N>()
+        },
+        Field{
+            "NativeBufferPtr", jlong{}
+        }
+    };
+
+    template<typename>
+    struct ImplType {
+        static_assert(false, "Incorrect specialization");
+    };
+
+    template<size_t... idx>
+    struct ImplType<std::index_sequence<idx...>> {
+        using Type = std::remove_pointer_t<jni::LocalObject<JObject::Definition>((
+            std::remove_cvref_t<decltype((void) idx, jobject{})>...))>;
+    };
+
+public:
+    using FunctionType = typename ImplType<std::make_index_sequence<N>>::Type;
+    using StandardFunctionType = std::function<FunctionType>;
+
+    explicit KNativeFunctionImplSized(StandardFunctionType function) : m_Function(std::move(function)) {}
+
+    template<typename... Args>
+    LocalObject<JObject::Definition> Invoke(Args... args) {
+        static_assert((std::is_same_v<jobject, Args> && ...), "All arguments must be jobject");
+        auto result = m_Function(args...);
+        return result;
+    }
+
+    StandardFunctionType &GetFunction() {
+        return m_Function;
+    }
+
+protected:
+    StandardFunctionType m_Function;
+};
+
+template<typename>
+class KNativeFunctionImpl {
+    static_assert(false, "Incorrect specialization");
+};
+
+template<typename Ret, typename... Args>
+    requires std::is_same_v<jobject, typename Ret::JavaType> &&
+             (std::is_same_v<jobject, typename Args::JavaType> && ...)
+class KNativeFunctionImpl<Ret(Args...)> : public KNativeFunctionImplSized<sizeof...(Args)> {
+public:
+    using Base = KNativeFunctionImplSized<sizeof...(Args)>;
+
+public:
+    virtual ~KNativeFunctionImpl() override = default;
+
+    KNativeFunctionImpl() = default;
+
+    explicit KNativeFunctionImpl(auto &&fn) : Base{
+        typename Base::StandardFunctionType(
+            [stored = std::forward<decltype(fn)>(fn)]<typename... Objs>(
+        Objs... objects) -> LocalObject<JObject::Definition> {
+                static_assert(( std::is_same_v<Objs, jobject> && ...), "All arguments must be jobject");
+                auto res = stored(Args{AdoptLocal{}, objects}...);
+                return LocalObject<JObject::Definition>{NewRef{}, res.ToJava()};
+            })
+    } {}
+};
+
+template<typename>
+class KNativeFunction {
+    static_assert(false, "Incorrect specialization");
+};
+
+template<typename Ret, typename... Args>
+    requires std::is_same_v<jobject, typename Ret::JavaType> &&
+             (std::is_same_v<jobject, typename Args::JavaType> && ...)
+class KNativeFunction<Ret(Args...)> {
+public:
+    constexpr static StringLiteral SimpleName = "com/easy/NativeFunction"_sl + ToStringLiteral<sizeof...(Args)>();
+    constexpr static StringLiteral FullName = ScriptingEngine::JTypes::MakeFullName(SimpleName);
+
+    constexpr static Class Definition{
+        SimpleName.Data,
+        Constructor{jlong{}},
+        Method{
+            "CastToInterface", Return{KNativeFunctions::KNativeFunctionInterface<sizeof...(Args)>::Definition},
+            Params{}
+        },
+        Method{
+            "invoke", Return{JObject::Definition}, GetParamsOfArgLength<sizeof...(Args)>()
+        },
+        Field{
+            "NativeBufferPtr", jlong{}
+        }
+    };
+
+public:
+    KNativeFunction(std::unique_ptr<KNativeFunctionImplSized<sizeof...(Args)>> fn) {
+        auto local = LocalObject<Definition>{reinterpret_cast<jlong>(fn.release())};
+        m_ObjectProvider = {
+            AdoptLocal{}, local.Release()
+        };
+    }
+
+    template<typename T>
+    explicit KNativeFunction(T &&fn) : KNativeFunction{
+        static_cast<std::unique_ptr<KNativeFunctionImplSized<sizeof...(Args)>>>(std::make_unique<KNativeFunctionImpl<Ret
+            (Args...)>>(std::forward<T>(fn)))
+    } {}
+
+    KNativeFunction(const KNativeFunction &) = default;
+
+    KNativeFunction(KNativeFunction &&) = default;
+
+    template<typename T>
+    KNativeFunction(T, jobject obj) : m_ObjectProvider{
+        T{}, obj
+    } {}
+
+    jobject ToJava() const {
+        return m_ObjectProvider.GetRawObject();
+    }
+
+    [[nodiscard]] LocalObject<Definition> Get() const {
+        return m_ObjectProvider.GetObject();
+    }
+
+    Ret operator()(Args... args) {
+        auto localRef = Get().template Call<"invoke">(args.ToJava()...);
+        Ret result{AdoptLocal{}, localRef.Release()};
+        return result;
+    }
+
+    SpecializedKNativeFunctionInterface<Ret(Args...)> CastToInterface() {
+        return {AdoptLocal{}, Get().template Call<"CastToInterface">().Release()};
+    }
+
+private:
+    LocalObjectProvider<Definition> m_ObjectProvider;
+};
+
+jobject NativeInvokeFunction1(JNIEnv *, jobject func, jobject arg1) {
+    LocalObject<KNativeFunctionImplSized<1>::Definition> function{func};
+
+    auto nativeFunction = reinterpret_cast<KNativeFunctionImplSized<1> *>(function.template Access<"NativeBufferPtr">().
+        Get());
+
+    return nativeFunction->Invoke(arg1).Release();
+}
+
+void RunJavaTests() {
+    RegisterNativeMethodDynamicRaw(
+        static_cast<jclass>(static_cast<jobject>(Lib::GetClass("com/easy/NativeFunction1"))),
+        "NativeInvoke",
+        GetObjectFunctionTypeSignatureOfArgLength<1>().Data, reinterpret_cast<void *>(NativeInvokeFunction1));
+
+    KNativeFunction<JString(JString)> function(
+        [](JString str) {
+            std::string newStr = std::string("Hello ") + str.Get();
+            return JString{newStr.data()};
+        }
+    );
+
+    int i = 0;
+
+    while (true) {
+        for (int j = 0; j < 10000; j++) {
+            LocalString str = "A very Long String.";
+        }
+
+        i++;
+        if (i % 100 == 0) {
+            std::cout << "Iteration: " << i << std::endl;
+            // Lib::CallGC();
+        }
+    }
+}
+
+int main(int argc, char *argv[]) {
+    Log::Init();
+
+    ScriptingEngine::Init();
+
+    RunJavaTests();
+
+    ScriptingEngine::Shutdown();
+
+    return 0;
+}
+
+/*int main(int argc, char *argv[]) {
+    auto app = Easy::ApplicationBuilder::Start()
+            .Window<OpenGLWindow>()
+            .ImGuiLayer<OpenGLImGuiLayer>()
+            .Build();
+
+    auto editorLayer = MakeArc<EditorLayer>();
+    app->PushLayer(editorLayer);
+    app->GetWindow().SetVSync(true);
+    app->Run();
+}*/
+
+/*
 void RunJavaTests() {
     using namespace ScriptingEngine;
     using namespace Lib;
 
-    constexpr static Class NativeBufferTests{
-        "com/easy/Test/NativeBufferTests",
+    using FunctionType1 = SpecializedKNativeFunctionInterface<JInteger(JInteger)>;
+    using FunctionType2 = SpecializedKNativeFunctionInterface<void(JString, JString)>;
+
+    constexpr static Class FunctionTestsDefinition{
+        "com/easy/Test/FunctionTests",
         Static{
-            Method{"AddPtr", Return{}, Params{jlong{}}},
-            Method{"RemoveAll", Return{}, Params{}},
+            Method{"TestInvokeIntInt", Return{FunctionType1::Definition}, Params{}},
+            Method{"TestStringStringVoid", Return{FunctionType2::Definition}, Params{}},
         }
     };
 
-    for (int i = 0; i < 10000; i++) {
-        jni::StaticRef<NativeBufferTests>().Call<"AddPtr">(reinterpret_cast<jlong>(new TestReportIntNativeBuffer(i)));
-        jni::StaticRef<NativeBufferTests>().Call<"RemoveAll">();
-    }
+    FunctionType1 function(
+        Owned{}, static_cast<jobject>(jni::StaticRef<FunctionTestsDefinition>().template Call<"TestInvokeIntInt">()));
+
+    JInteger result = function.Get().value()(JInteger{5});
+
+    FunctionType2 function2(
+        Owned{},
+        static_cast<jobject>(jni::StaticRef<FunctionTestsDefinition>().template Call<"TestStringStringVoid">()));
+
+    function2.Get().value()(JString{"Hello"}, JString{"World"});
+
+    EZ_ASSERT(result.Get() == 6, "Expected 6, got {}", result.GetOrDefault());
 }
+*/
