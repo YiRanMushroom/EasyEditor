@@ -325,6 +325,27 @@ struct TestReportIntNativeBuffer : ScriptingEngine::AutoManagedBufferBase {
 };
 
 void RunJavaTests() {
+    while (true) {
+        std::string_view view =
+                "A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. ";
+
+
+        for (int i = 0; i < 1000; i++) {
+            // jstring newStr = ScriptingEngine::GetEnv()->NewStringUTF(view.data());
+            // ScriptingEngine::GetEnv()->DeleteLocalRef(newStr);
+            // std::cout << "Creating String" << std::endl;
+            {
+                LocalString newStr{view};
+                if (i == 0) {
+                    std::cout << newStr.Pin().ToString();
+                }
+            }
+            // std::cout << "String created" << std::endl;
+        }
+
+        ScriptingEngine::Lib::CallGC();
+        std::cout << "GC is called" << std::endl;
+    }
 
     ScriptingEngine::KNativeFunctions::KNativeFunction<JInteger(JInteger, JFloat)> function(
         [](JInteger i, JFloat f)-> JInteger {
