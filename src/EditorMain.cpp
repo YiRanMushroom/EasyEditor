@@ -325,53 +325,52 @@ struct TestReportIntNativeBuffer : ScriptingEngine::AutoManagedBufferBase {
 };
 
 void RunJavaTests() {
-    while (true) {
-        std::string_view view =
-                "A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. A very Long String. ";
 
+    // ScriptingEngine::KNativeFunctions::KNativeFunction<JInteger(JInteger, JFloat)> function(
+    //     [](JInteger i, JFloat f)-> JInteger {
+    //         return i.Get().value() * f.Get().value();
+    //     }
+    // );
+    //
+    // for (int i = 0; i < 100000; ++i) {
+    //     float f = rand() / 10000000;
+    //     JInteger result = function(JInteger{i}, JFloat{f});
+    //     EZ_ASSERT(result.Get() == i * f, "Expected {0}, got {1}", i * 0.5f, result.GetOrDefault());
+    //
+    //     if (i % 100000 == 0) {
+    //         EZ_CORE_INFO("i: {0}", i);
+    //         ScriptingEngine::Lib::CallGC();
+    //     }
+    // }
+    //
+    // ScriptingEngine::KNativeFunctions::KNativeFunction<void(JInteger)> printIntFunction(
+    //     [](JInteger i) {
+    //         EZ_CORE_INFO("PrintInt: {0}", i.Get().value());
+    //     }
+    // );
+    //
+    // for (int i = 0; i < 10; ++i) {
+    //     printIntFunction(JInteger{i});
+    // }
 
-        for (int i = 0; i < 1000; i++) {
-            // jstring newStr = ScriptingEngine::GetEnv()->NewStringUTF(view.data());
-            // ScriptingEngine::GetEnv()->DeleteLocalRef(newStr);
-            // std::cout << "Creating String" << std::endl;
-            {
-                LocalString newStr{view};
-                if (i == 0) {
-                    std::cout << newStr.Pin().ToString();
-                }
+    ScriptingEngine::KNativeFunctions::KNativeFunction<JString(JString, JString)> concat(
+        [](JString str1, JString str2) {
+            return JString{str1.Get() + str2.Get()};
+        }
+    );
+
+    {
+        std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+        for (int i = 0; i < 1000000; i++) {
+            JString res = concat(JString{"Hello "}, JString{"World"});
+            if (i % 1000 == 0) {
+                // EZ_CORE_INFO("Concat: {0}", res.Get().c_str());
+                ScriptingEngine::Lib::CallGC();
             }
-            // std::cout << "String created" << std::endl;
         }
-
-        ScriptingEngine::Lib::CallGC();
-        std::cout << "GC is called" << std::endl;
-    }
-
-    ScriptingEngine::KNativeFunctions::KNativeFunction<JInteger(JInteger, JFloat)> function(
-        [](JInteger i, JFloat f)-> JInteger {
-            return i.Get().value() * f.Get().value();
-        }
-    );
-
-    for (int i = 0; i < 100000; ++i) {
-        float f = rand() / 10000000;
-        JInteger result = function(JInteger{i}, JFloat{f});
-        EZ_ASSERT(result.Get() == i * f, "Expected {0}, got {1}", i * 0.5f, result.GetOrDefault());
-
-        if (i % 100000 == 0) {
-            EZ_CORE_INFO("i: {0}", i);
-            ScriptingEngine::Lib::CallGC();
-        }
-    }
-
-    ScriptingEngine::KNativeFunctions::KNativeFunction<void(JInteger)> printIntFunction(
-        [](JInteger i) {
-            EZ_CORE_INFO("PrintInt: {0}", i.Get().value());
-        }
-    );
-
-    for (int i = 0; i < 10; ++i) {
-        printIntFunction(JInteger{i});
+        std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+        std::cout << "Time taken for 1000000 concatenations: "
+                  << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << std::endl;
     }
 }
 
