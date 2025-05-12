@@ -332,10 +332,25 @@ void RunJavaTests() {
         }
     );
 
-    for (int i = 0; i < 10000; ++i) {
-        float f = rand() / 1000000;
+    for (int i = 0; i < 100000; ++i) {
+        float f = rand() / 10000000;
         JInteger result = function(JInteger{i}, JFloat{f});
         EZ_ASSERT(result.Get() == i * f, "Expected {0}, got {1}", i * 0.5f, result.GetOrDefault());
+
+        if (i % 100000 == 0) {
+            EZ_CORE_INFO("i: {0}", i);
+            ScriptingEngine::Lib::CallGC();
+        }
+    }
+
+    ScriptingEngine::KNativeFunctions::KNativeFunction<void(JInteger)> printIntFunction(
+        [](JInteger i) {
+            EZ_CORE_INFO("PrintInt: {0}", i.Get().value());
+        }
+    );
+
+    for (int i = 0; i < 10; ++i) {
+        printIntFunction(JInteger{i});
     }
 }
 
