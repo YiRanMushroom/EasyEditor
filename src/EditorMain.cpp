@@ -325,7 +325,6 @@ struct TestReportIntNativeBuffer : ScriptingEngine::AutoManagedBufferBase {
 };
 
 void RunJavaTests() {
-
     // ScriptingEngine::KNativeFunctions::KNativeFunction<JInteger(JInteger, JFloat)> function(
     //     [](JInteger i, JFloat f)-> JInteger {
     //         return i.Get().value() * f.Get().value();
@@ -355,12 +354,13 @@ void RunJavaTests() {
 
     JString space = JString{" "};
 
-    ScriptingEngine::KNativeFunctions::KNativeFunction<JString(JString, JString)> concat(
-        [&space](JString str1, JString str2) {
-            return JString{str1.Get() + space.Get() + str2.Get()};
-        }
-    );
-
+    auto concat =
+            ScriptingEngine::KNativeFunctions::KNativeFunction<JString(JString, JString)>(
+                [&space](JString str1, JString str2) {
+                    return JString{str1.Get() + space.Get() + str2.Get()};
+                }
+            ).CastToInterface();
+    // Scoped.
     {
         std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
         for (int i = 0; i < 1000000; i++) {
@@ -372,7 +372,7 @@ void RunJavaTests() {
         }
         std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
         std::cout << "Time taken for 1000000 concatenations: "
-                  << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << std::endl;
+                << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << std::endl;
     }
 }
 
