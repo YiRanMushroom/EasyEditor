@@ -353,18 +353,20 @@ void RunJavaTests() {
     //     printIntFunction(JInteger{i});
     // }
 
+    JString space = JString{" "};
+
     ScriptingEngine::KNativeFunctions::KNativeFunction<JString(JString, JString)> concat(
-        [](JString str1, JString str2) {
-            return JString{str1.Get() + str2.Get()};
+        [&space](JString str1, JString str2) {
+            return JString{str1.Get() + space.Get() + str2.Get()};
         }
     );
 
     {
         std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
         for (int i = 0; i < 1000000; i++) {
-            JString res = concat(JString{"Hello "}, JString{"World"});
-            if (i % 1000 == 0) {
-                // EZ_CORE_INFO("Concat: {0}", res.Get().c_str());
+            JString res = concat(JString{"Hello"}, JString{"World"});
+            if (i % 10000 == 0) {
+                EZ_CORE_INFO("Concat: {0}", res.Get().c_str());
                 ScriptingEngine::Lib::CallGC();
             }
         }
