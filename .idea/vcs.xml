@@ -3,5 +3,10 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/EasyEngineCore" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/EasyEngineCore/vendor/SPIRV-Headers" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/EasyEngineCore/vendor/msdf-atlas-gen" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/EasyEngineCore/vendor/msdf-atlas-gen/msdfgen" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/EasyEngineCore/vendor/msdf-atlas-gen/msdfgen/freetype" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/EasyEngineCore/vendor/msdf-atlas-gen/msdfgen/freetype/subprojects/dlg" vcs="Git" />
   </component>
 </project>
