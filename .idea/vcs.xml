@@ -3,27 +3,5 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/EasyEngineCore" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/EasyEngineCore/vendor/ImGuizmo" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/EasyEngineCore/vendor/LuaJIT" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/EasyEngineCore/vendor/SPIRV-Cross" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/EasyEngineCore/vendor/SPIRV-Headers" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/EasyEngineCore/vendor/SPIRV-Tools" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/EasyEngineCore/vendor/box2d" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/EasyEngineCore/vendor/freetype" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/EasyEngineCore/vendor/freetype/subprojects/dlg" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/EasyEngineCore/vendor/glfw" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/EasyEngineCore/vendor/glm" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/EasyEngineCore/vendor/glslang" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/EasyEngineCore/vendor/imgui" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/EasyEngineCore/vendor/jni-bind" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/EasyEngineCore/vendor/msdf-atlas-gen" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/EasyEngineCore/vendor/msdf-atlas-gen/msdfgen" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/EasyEngineCore/vendor/msdf-atlas-gen/msdfgen/freetype" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/EasyEngineCore/vendor/msdf-atlas-gen/msdfgen/freetype/subprojects/dlg" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/EasyEngineCore/vendor/shaderc" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/EasyEngineCore/vendor/sol2" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/EasyEngineCore/vendor/spdlog" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/EasyEngineCore/vendor/std_module" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/EasyEngineCore/vendor/yaml-cpp" vcs="Git" />
   </component>
 </project>
