@@ -12,7 +12,31 @@ import Easy.Scripting.KNativeArrays;
 
 using namespace jni;
 
+void RunJavaTests() {
+    using namespace Easy::ScriptingEngine;
+
+    std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+
+    for (int i = 0; i < 1000; i++) {
+        KNativeString str{"Hello World"};
+    }
+
+    std::cout << "Time taken for 1000 iterations: "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(
+                     std::chrono::high_resolution_clock::now() - start)
+                     .count()
+              << " ms" << std::endl;
+}
+
 namespace Easy {
+    constexpr static Class ImGuiDefinition{
+        "com/easy/Test/ImGuiTests",
+        Constructor{},
+        Method{"Render", Return{}, Params{}}
+    };
+
+    std::unique_ptr<GlobalObject<ImGuiDefinition>> ImGuiTests;
+
     void EditorLayer::OnAttach() {
         Layer::OnAttach();
         // 1280x720
@@ -35,6 +59,8 @@ namespace Easy {
         // m_BottomSquareEntity.AddComponent<TransformComponent>(glm::vec3(0.0f, -0.5f, 0.0f));
         m_BottomSquareEntity.GetComponent<TransformComponent>().Translation = {0.0f, -0.5f, 0.0f};
         m_BottomSquareEntity.AddComponent<SpriteRendererComponent>(glm::vec4(0.3f, 1.0f, 0.3f, 1.0f));
+
+        ImGuiTests = std::make_unique<GlobalObject<ImGuiDefinition>>();
     }
 
     void EditorLayer::OnUpdate(float x) {
@@ -49,6 +75,8 @@ namespace Easy {
         Renderer2D::EndScene();
 
         m_SceneFramebuffer->Unbind();
+
+        RunJavaTests();
     }
 
 
@@ -160,6 +188,7 @@ namespace Easy {
     }
 
     void EditorLayer::OnDetach() {
+        ImGuiTests.reset();
         m_Scene.DestroyEntity(m_TopSquareEntity);
         m_Scene.DestroyEntity(m_BottomSquareEntity);
 
@@ -207,15 +236,7 @@ namespace Easy {
     void EditorLayer::RenderJavaTests() {
         EZ_PROFILE_FUNCTION();
 
-        constexpr static Class ImGuiDefinition{
-            "com/easy/Test/ImGuiTests",
-            Constructor{},
-            Method{"Render", Return{}, Params{}}
-        };
-
-        static GlobalObject<ImGuiDefinition> ImGuiTests{};
-
-        ImGuiTests.Call<"Render">();
+        ImGuiTests->Call<"Render">();
     }
 
     void EditorLayer::RenderProfiles() {
@@ -231,89 +252,7 @@ namespace Easy {
 
 void RunJavaTests();
 
-
 using namespace ScriptingEngine::JTypes;
-
-/*struct TestStruct : public InjectJObject {
-public:
-    constexpr static StringLiteral SimpleName = "com/easy/Test/BasicTests";
-    constexpr static StringLiteral FullName = ScriptingEngine::JTypes::MakeFullName(SimpleName);
-
-    constexpr static Class Definition{
-        "com/easy/Test/BasicTests",
-    };
-
-
-    [[nodiscard]] jobject ToJava() const {
-        return m_Ref.GetRawObject();
-    }
-
-    TestStruct() : m_Ref{
-        s_Constructor3.Invoke(ScriptingEngine::GetEnv(), s_ClassRef.GetObjectAs<jclass>())
-    } {
-        EZ_CORE_ASSERT(m_Ref.NotNull(), "Failed to create TestStruct");
-    }
-
-    TestStruct(jobject obj) : m_Ref{obj} {
-        EZ_CORE_ASSERT(m_Ref.NotNull(), "Failed to create TestStruct");
-    }
-
-    TestStruct(JString str, Jint i, JDouble d)
-        : TestStruct(s_Constructor1.Invoke(ScriptingEngine::GetEnv(),
-                                           s_ClassRef.GetObjectAs<jclass>(), str, i, d)) {
-        EZ_CORE_ASSERT(m_Ref.NotNull(), "Failed to create TestStruct");
-    }
-
-    TestStruct(Jint i) : TestStruct(s_Constructor2.Invoke(ScriptingEngine::GetEnv(),
-                                                          s_ClassRef.GetObjectAs<jclass>(), i)) {
-        EZ_CORE_ASSERT(m_Ref.NotNull(), "Failed to create TestStruct");
-    }
-
-    TestStruct(JString str) : TestStruct(s_Constructor4.Invoke(ScriptingEngine::GetEnv(),
-                                                               s_ClassRef.GetObjectAs<jclass>(),
-                                                               str)) {
-        EZ_CORE_ASSERT(m_Ref.NotNull(), "Failed to create TestStruct");
-    }
-
-    static void Init() {
-        s_ClassRef.SetFrom(ScriptingEngine::Lib::GetClass("com.easy.Test.BasicTests"));
-
-        s_Constructor1.Init(s_ClassRef.GetObjectAs<jclass>());
-        s_Constructor2.Init(s_ClassRef.GetObjectAs<jclass>());
-        s_Constructor3.Init(s_ClassRef.GetObjectAs<jclass>());
-        s_Constructor4.Init(s_ClassRef.GetObjectAs<jclass>());
-        s_ToStringMethod.Init(s_ClassRef.GetObjectAs<jclass>(), "ToString");
-
-        s_StaticCreateMethod.Init(s_ClassRef.GetObjectAs<jclass>(), "Create");
-    }
-
-    static TestStruct Create(std::string str, int i, double d) {
-        return s_StaticCreateMethod.Invoke(ScriptingEngine::GetEnv(),
-                                           s_ClassRef.GetObjectAs<jclass>(),
-                                           JString{str},
-                                           Jint{i},
-                                           Jdouble{d});
-    }
-
-    [[nodiscard]] JString ToString() const {
-        return JString{
-            NewRef{}, s_ToStringMethod.Invoke(ScriptingEngine::GetEnv(), m_Ref.GetObjectAs<jobject>())
-        };
-    }
-
-private:
-    ScriptingEngine::JavaGlobalArc<Definition> m_Ref;
-
-private:
-    inline static ScriptingEngine::JavaGlobalArc<JTClass> s_ClassRef;
-
-    inline static ScriptingEngine::JConstructor<TestStruct(JString, Jint, JDouble)> s_Constructor1;
-    inline static ScriptingEngine::JConstructor<TestStruct(Jint)> s_Constructor2;
-    inline static ScriptingEngine::JConstructor<TestStruct()> s_Constructor3;
-    inline static ScriptingEngine::JConstructor<TestStruct(JString)> s_Constructor4;
-    inline static ScriptingEngine::JInstanceMethod<JString(TestStruct)> s_ToStringMethod;
-    inline static ScriptingEngine::JStaticMethod<TestStruct(JString, Jint, Jdouble)> s_StaticCreateMethod;
-};*/
 
 struct TestReportIntNativeBuffer : ScriptingEngine::AutoManagedBufferBase {
     int value;
@@ -326,28 +265,9 @@ struct TestReportIntNativeBuffer : ScriptingEngine::AutoManagedBufferBase {
 };
 
 
-void RunJavaTests() {
-    using namespace Easy::ScriptingEngine;
-
-    std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
-
-    for (int i = 0; i < 10000000; i++) {
-        KNativeString str{"Hello World"};
-        if (i % 1000000 == 0) {
-            EZ_CORE_INFO("Test {0}: {1}", i, str.Get().c_str());
-            Lib::CallGC();
-        }
-    }
 
 
-    std::cout << "Time taken for 10000000 iterations: "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(
-                     std::chrono::high_resolution_clock::now() - start)
-                     .count()
-              << " ms" << std::endl;
-}
-
-int main(int argc, char *argv[]) {
+/*int main(int argc, char *argv[]) {
     Log::Init();
 
     ScriptingEngine::Init();
@@ -357,9 +277,9 @@ int main(int argc, char *argv[]) {
     ScriptingEngine::Shutdown();
 
     return 0;
-}
+}*/
 
-/*int main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
     auto app = Easy::ApplicationBuilder::Start()
             .Window<OpenGLWindow>()
             .ImGuiLayer<OpenGLImGuiLayer>()
@@ -369,7 +289,7 @@ int main(int argc, char *argv[]) {
     app->PushLayer(editorLayer);
     app->GetWindow().SetVSync(true);
     app->Run();
-}*/
+}
 
 /*
 void RunJavaTests() {
