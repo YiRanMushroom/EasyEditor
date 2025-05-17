@@ -51,11 +51,4 @@ namespace Easy {
 }
 
 
-void providedNativePrintln
-(JNIEnv *env, jclass clazz, jstring message) {
-    const char *str = env->GetStringUTFChars(message, nullptr);
-    std::cout << "Native print: " << str << std::endl;
-    env->ReleaseStringUTFChars(message, str);
-}
-
 export int main(int argc, char *argv[]);

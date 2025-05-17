@@ -5,38 +5,8 @@ module;
 module EditorMain;
 
 import Easy;
-import Easy.Scripting.JniBind;
-import Easy.Scripting.JTypes;
-import Easy.Scripting.KNativeFunctions;
-import Easy.Scripting.KNativeArrays;
-
-using namespace jni;
-
-void RunJavaTests() {
-    using namespace Easy::ScriptingEngine;
-
-    std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
-
-    for (int i = 0; i < 1000; i++) {
-        KNativeString str{"Hello World"};
-    }
-
-    std::cout << "Time taken for 1000 iterations: "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(
-                     std::chrono::high_resolution_clock::now() - start)
-                     .count()
-              << " ms" << std::endl;
-}
 
 namespace Easy {
-    constexpr static Class ImGuiDefinition{
-        "com/easy/Test/ImGuiTests",
-        Constructor{},
-        Method{"Render", Return{}, Params{}}
-    };
-
-    std::unique_ptr<GlobalObject<ImGuiDefinition>> ImGuiTests;
-
     void EditorLayer::OnAttach() {
         Layer::OnAttach();
         // 1280x720
@@ -59,8 +29,6 @@ namespace Easy {
         // m_BottomSquareEntity.AddComponent<TransformComponent>(glm::vec3(0.0f, -0.5f, 0.0f));
         m_BottomSquareEntity.GetComponent<TransformComponent>().Translation = {0.0f, -0.5f, 0.0f};
         m_BottomSquareEntity.AddComponent<SpriteRendererComponent>(glm::vec4(0.3f, 1.0f, 0.3f, 1.0f));
-
-        ImGuiTests = std::make_unique<GlobalObject<ImGuiDefinition>>();
     }
 
     void EditorLayer::OnUpdate(float x) {
@@ -75,8 +43,6 @@ namespace Easy {
         Renderer2D::EndScene();
 
         m_SceneFramebuffer->Unbind();
-
-        RunJavaTests();
     }
 
 
@@ -188,7 +154,6 @@ namespace Easy {
     }
 
     void EditorLayer::OnDetach() {
-        ImGuiTests.reset();
         m_Scene.DestroyEntity(m_TopSquareEntity);
         m_Scene.DestroyEntity(m_BottomSquareEntity);
 
@@ -235,8 +200,6 @@ namespace Easy {
 
     void EditorLayer::RenderJavaTests() {
         EZ_PROFILE_FUNCTION();
-
-        ImGuiTests->Call<"Render">();
     }
 
     void EditorLayer::RenderProfiles() {
@@ -249,20 +212,6 @@ namespace Easy {
         ImGui::End();
     }
 }
-
-void RunJavaTests();
-
-using namespace ScriptingEngine::JTypes;
-
-struct TestReportIntNativeBuffer : ScriptingEngine::AutoManagedBufferBase {
-    int value;
-
-    virtual ~TestReportIntNativeBuffer() override {
-        // EZ_CORE_INFO("TestReportIntNativeBuffer destructor called: {}", value);
-    }
-
-    TestReportIntNativeBuffer(int v) : value(v) {}
-};
 
 
 
