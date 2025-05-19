@@ -16,6 +16,10 @@ endif ()
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${MODULES})
 
+if (MSVC)
+    target_compile_options(${PROJECT_NAME} PRIVATE /Zc:preprocessor /Wv:19.23)
+endif ()
+
 target_sources(${PROJECT_NAME}
         PUBLIC
         FILE_SET cxx_modules
