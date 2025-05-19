@@ -8,6 +8,12 @@ set(CMAKE_CXX_STANDARD 23)
 file(GLOB_RECURSE SOURCES src/*.cpp)
 file(GLOB_RECURSE MODULES src/*.ixx src/*.cppm)
 
+if (MSVC)
+    # use static runtime library
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+else ()
+endif ()
+
 add_executable(${PROJECT_NAME} ${SOURCES} ${MODULES})
 
 target_sources(${PROJECT_NAME}
@@ -26,7 +32,8 @@ target_link_libraries(${PROJECT_NAME}
 
 # Copy the files and directories to the output directory
 set(FilesToCopy
-        "imgui.ini")
+#        "imgui.ini"
+)
 
 set(DirectoriesToCopy
         "assets"

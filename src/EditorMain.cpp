@@ -1,9 +1,8 @@
 module;
 
-#include <Core/MacroUtils.hpp>
-
 module EditorMain;
 
+import <Core/MacroUtils.hu>;
 import Easy;
 
 namespace Easy {
@@ -238,6 +237,7 @@ int main(int argc, char *argv[]) {
     app->PushLayer(editorLayer);
     app->GetWindow().SetVSync(true);
     app->Run();
+    return 0;
 }
 
 /*
