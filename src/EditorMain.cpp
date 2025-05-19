@@ -2,7 +2,7 @@ module;
 
 module EditorMain;
 
-import <Core/MacroUtils.hu>;
+import <Core/MacroUtils.hpp>;
 import Easy;
 
 namespace Easy {
