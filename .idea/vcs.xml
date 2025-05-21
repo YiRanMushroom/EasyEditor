@@ -3,6 +3,5 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/EasyEngineCore" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/EasyEngineCore/vendor/libcuckoo" vcs="Git" />
   </component>
 </project>
