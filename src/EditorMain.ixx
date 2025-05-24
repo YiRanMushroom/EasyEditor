@@ -4,6 +4,7 @@ module;
 
 export module EditorMain;
 import Easy;
+import Easy.Editor.SceneHierarchyPanel;
 
 using namespace Easy;
 
@@ -26,8 +27,6 @@ namespace Easy {
 
         void OnSceneUpdate(float ts);
 
-        void RenderJavaTests();
-
         void RenderProfiles();
 
     public:
@@ -37,16 +36,21 @@ namespace Easy {
         bool p_open = true;
         bool opt_fullscreen = true;
         bool opt_padding = false;
+
+        bool is_blocking = false;
+
         ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
 
-        Arc<Easy::Framebuffer> m_SceneFramebuffer;
-        OrthographicCamera m_EditorCamera;
+        Arc<Framebuffer> m_SceneFramebuffer;
+        EditorCamera m_EditorCamera;
 
         ImVec2 m_ViewportSize = {1280.f / 2, 720.f / 2};
 
         Scene m_Scene;
         Entity m_TopSquareEntity;
         Entity m_BottomSquareEntity;
+
+        Arc<SceneHierarchyPanel> m_SceneHierarchyPanel = MakeArc<SceneHierarchyPanel>();
     };
 }
 

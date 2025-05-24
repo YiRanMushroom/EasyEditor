@@ -1,16 +1,12 @@
 module;
-
+import <Core/MacroUtils.hpp>;
 module EditorMain;
 
-import <Core/MacroUtils.hpp>;
 import Easy;
 
 namespace Easy {
     void EditorLayer::OnAttach() {
         Layer::OnAttach();
-        // 1280x720
-        float aspectRatio = 1280.0f / 720.0f;
-        m_EditorCamera = OrthographicCamera(-aspectRatio, aspectRatio, -1.0f, 1.0f);
         FramebufferSpecification fbSpec;
         fbSpec.Attachments = {
             FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RED_INTEGER, FramebufferTextureFormat::Depth
@@ -19,15 +15,18 @@ namespace Easy {
         fbSpec.Height = 720 / 2;
         m_SceneFramebuffer = Framebuffer::Create(fbSpec);
 
+        // fov, aspect ratio, near, far
+        m_EditorCamera = EditorCamera(90.0f, (float) fbSpec.Width / (float) fbSpec.Height, 0.01f, 1000.0f);
+
         m_TopSquareEntity = m_Scene.CreateEntity("Top Square");
-        // m_TopSquareEntity.AddComponent<TransformComponent>(glm::vec3(0.0f, 0.5f, 0.0f));
         m_TopSquareEntity.GetComponent<TransformComponent>().Translation = {0.0f, 0.5f, 0.0f};
         m_TopSquareEntity.AddComponent<SpriteRendererComponent>(glm::vec4(1.0f, 0.3f, 1.0f, 1.0f));
 
         m_BottomSquareEntity = m_Scene.CreateEntity("Bottom Square");
-        // m_BottomSquareEntity.AddComponent<TransformComponent>(glm::vec3(0.0f, -0.5f, 0.0f));
         m_BottomSquareEntity.GetComponent<TransformComponent>().Translation = {0.0f, -0.5f, 0.0f};
         m_BottomSquareEntity.AddComponent<SpriteRendererComponent>(glm::vec4(0.3f, 1.0f, 0.3f, 1.0f));
+
+        m_SceneHierarchyPanel->SetContext(&m_Scene);
     }
 
     void EditorLayer::OnUpdate(float x) {
@@ -94,8 +93,6 @@ namespace Easy {
 
         if (ImGui::BeginMenuBar()) {
             if (ImGui::BeginMenu("Options")) {
-                // Disabling fullscreen would allow the window to be moved to the front of other windows,
-                // which we can't undo at the moment without finer window depth/z control.
                 ImGui::MenuItem("Fullscreen", nullptr, &opt_fullscreen);
                 ImGui::MenuItem("Padding", nullptr, &opt_padding);
                 ImGui::Separator();
@@ -142,14 +139,15 @@ namespace Easy {
 
         RenderViewport();
 
-        RenderJavaTests();
-
         RenderProfiles();
+
+        m_SceneHierarchyPanel->OnImGuiRender();
     }
 
     void EditorLayer::OnEvent(Event &event) {
         Layer::OnEvent(event);
-        EZ_CORE_INFO("Event: {0}", event.ToString());
+        m_EditorCamera.OnEvent(event);
+        // EZ_CORE_INFO("Event: {0}", event.ToString());
     }
 
     void EditorLayer::OnDetach() {
@@ -164,8 +162,10 @@ namespace Easy {
         ImGui::Begin("ViewPort");
         if (ImGui::IsWindowFocused() && ImGui::IsWindowHovered()) {
             Application::Get().GetImGuiLayer()->BlockEvents(false);
+            is_blocking = false;
         } else {
             Application::Get().GetImGuiLayer()->BlockEvents(true);
+            is_blocking = true;
         }
         ImGui::PopStyleVar();
         auto currentSize = ImGui::GetContentRegionAvail();
@@ -181,8 +181,7 @@ namespace Easy {
                     m_ViewportSize = currentSize;
                     m_SceneFramebuffer->Resize(static_cast<uint32_t>(m_ViewportSize.x),
                                                static_cast<uint32_t>(m_ViewportSize.y));
-                    float aspectRatio = m_ViewportSize.x / m_ViewportSize.y;
-                    m_EditorCamera.SetProjection(-aspectRatio, aspectRatio, -1.0f, 1.0f);
+                    m_EditorCamera.SetViewportSize(m_ViewportSize.x, m_ViewportSize.y);
                 });
         }
 
@@ -190,15 +189,9 @@ namespace Easy {
     }
 
     void EditorLayer::OnSceneUpdate(float ts) {
-        auto view = m_Scene.GetAllEntitiesWith<TransformComponent, SpriteRendererComponent>();
-        for (const auto &entity: view) {
-            auto [transform, sprite] = view.get<TransformComponent, SpriteRendererComponent>(entity);
-            Renderer2D::DrawQuad(transform.Translation, transform.Scale, sprite.Color);
-        }
-    }
-
-    void EditorLayer::RenderJavaTests() {
-        EZ_PROFILE_FUNCTION();
+        if (!is_blocking)
+            m_EditorCamera.OnUpdate(ts);
+        m_Scene.OnUpdateEditor(ts, m_EditorCamera);
     }
 
     void EditorLayer::RenderProfiles() {
@@ -211,8 +204,6 @@ namespace Easy {
         ImGui::End();
     }
 }
-
-
 
 
 /*int main(int argc, char *argv[]) {

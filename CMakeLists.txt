@@ -24,7 +24,7 @@ target_sources(${PROJECT_NAME}
         PUBLIC
         FILE_SET cxx_modules
         TYPE CXX_MODULES
-        FILES ${MODULES}
+        FILES ${MODULES} ${SOURCES}
 )
 
 add_subdirectory(EasyEngineCore)
