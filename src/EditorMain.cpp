@@ -15,8 +15,17 @@ namespace Easy {
         fbSpec.Height = 720 / 2;
         m_SceneFramebuffer = Framebuffer::Create(fbSpec);
 
-        // fov, aspect ratio, near, far
-        m_EditorCamera = EditorCamera(90.0f, (float) fbSpec.Width / (float) fbSpec.Height, 0.01f, 1000.0f);
+        // add camera entity
+        m_CameraEntity = m_Scene.CreateEntity("Camera");
+        m_CameraEntity.AddComponent<CameraComponent>(CameraComponent());
+        auto& camera = m_CameraEntity.GetComponent<CameraComponent>();
+        camera.Camera.SetProjectionType(SceneCamera::ProjectionType::Orthographic);
+        camera.Camera.SetOrthographicSize(10.0f);
+        camera.Camera.SetOrthographicNearClip(-1.0f);
+        camera.Camera.SetOrthographicFarClip(1.0f);
+        camera.Camera.SetViewportSize(1280 / 2, 720 / 2);
+        camera.Primary = true;
+
 
         m_TopSquareEntity = m_Scene.CreateEntity("Top Square");
         m_TopSquareEntity.GetComponent<TransformComponent>().Translation = {0.0f, 0.5f, 0.0f};
@@ -36,9 +45,7 @@ namespace Easy {
         RenderCommand::SetClearColor({0.3f, 0.3f, 0.3f, 1.0f});
         RenderCommand::Clear();
 
-        Renderer2D::BeginScene(m_EditorCamera);
         OnSceneUpdate(x);
-        Renderer2D::EndScene();
 
         m_SceneFramebuffer->Unbind();
     }
@@ -146,7 +153,6 @@ namespace Easy {
 
     void EditorLayer::OnEvent(Event &event) {
         Layer::OnEvent(event);
-        m_EditorCamera.OnEvent(event);
         // EZ_CORE_INFO("Event: {0}", event.ToString());
     }
 
@@ -162,10 +168,8 @@ namespace Easy {
         ImGui::Begin("ViewPort");
         if (ImGui::IsWindowFocused() && ImGui::IsWindowHovered()) {
             Application::Get().GetImGuiLayer()->BlockEvents(false);
-            is_blocking = false;
         } else {
             Application::Get().GetImGuiLayer()->BlockEvents(true);
-            is_blocking = true;
         }
         ImGui::PopStyleVar();
         auto currentSize = ImGui::GetContentRegionAvail();
@@ -181,7 +185,7 @@ namespace Easy {
                     m_ViewportSize = currentSize;
                     m_SceneFramebuffer->Resize(static_cast<uint32_t>(m_ViewportSize.x),
                                                static_cast<uint32_t>(m_ViewportSize.y));
-                    m_EditorCamera.SetViewportSize(m_ViewportSize.x, m_ViewportSize.y);
+                    // m_EditorCamera.SetViewportSize(m_ViewportSize.x, m_ViewportSize.y);
                 });
         }
 
@@ -189,9 +193,7 @@ namespace Easy {
     }
 
     void EditorLayer::OnSceneUpdate(float ts) {
-        if (!is_blocking)
-            m_EditorCamera.OnUpdate(ts);
-        m_Scene.OnUpdateEditor(ts, m_EditorCamera);
+        m_Scene.OnUpdateRuntime(ts);
     }
 
     void EditorLayer::RenderProfiles() {

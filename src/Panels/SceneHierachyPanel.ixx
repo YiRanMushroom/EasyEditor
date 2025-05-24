@@ -25,6 +25,6 @@ namespace Easy {
     private:
         Scene *m_Scene = nullptr;
         Entity m_SelectionContext;
-        Entity m_UnselectedContext;
+        // Entity m_UnselectedContext;
     };
 }

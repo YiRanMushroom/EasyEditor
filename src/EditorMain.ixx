@@ -11,7 +11,7 @@ using namespace Easy;
 namespace Easy {
     class EditorLayer : public Layer {
     public:
-        EditorLayer() : Layer("EditorLayer"), m_EditorCamera() {}
+        EditorLayer() : Layer("EditorLayer") {}
 
         void OnAttach() override;
 
@@ -37,18 +37,16 @@ namespace Easy {
         bool opt_fullscreen = true;
         bool opt_padding = false;
 
-        bool is_blocking = false;
-
         ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
 
         Arc<Framebuffer> m_SceneFramebuffer;
-        EditorCamera m_EditorCamera;
 
         ImVec2 m_ViewportSize = {1280.f / 2, 720.f / 2};
 
         Scene m_Scene;
         Entity m_TopSquareEntity;
         Entity m_BottomSquareEntity;
+        Entity m_CameraEntity;
 
         Arc<SceneHierarchyPanel> m_SceneHierarchyPanel = MakeArc<SceneHierarchyPanel>();
     };
