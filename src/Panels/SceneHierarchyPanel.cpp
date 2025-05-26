@@ -163,6 +163,7 @@ namespace Easy {
                     if (ImGui::DragFloat("Far Clip", &farClip, 0.1f)) {
                         camera.Camera.SetOrthographicFarClip(farClip);
                     }
+                    ImGui::Checkbox("Fixed Aspect Ratio", &camera.FixedAspectRatio);
                 }
 
                 ImGui::TreePop();

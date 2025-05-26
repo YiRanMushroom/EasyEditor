@@ -185,7 +185,8 @@ namespace Easy {
                     m_ViewportSize = currentSize;
                     m_SceneFramebuffer->Resize(static_cast<uint32_t>(m_ViewportSize.x),
                                                static_cast<uint32_t>(m_ViewportSize.y));
-                    // m_EditorCamera.SetViewportSize(m_ViewportSize.x, m_ViewportSize.y);
+                    auto& camera = m_CameraEntity.GetComponent<CameraComponent>();
+                    camera.Camera.SetViewportSize(m_ViewportSize.x, m_ViewportSize.y);
                 });
         }
 
