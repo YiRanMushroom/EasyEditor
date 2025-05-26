@@ -3,6 +3,7 @@ import <Core/MacroUtils.hpp>;
 module EditorMain;
 
 import Easy;
+import Easy.Platform.Impl;
 
 namespace Easy {
     void EditorLayer::OnAttach() {
@@ -208,19 +209,6 @@ namespace Easy {
     }
 }
 
-
-/*int main(int argc, char *argv[]) {
-    Log::Init();
-
-    ScriptingEngine::Init();
-
-    RunJavaTests();
-
-    ScriptingEngine::Shutdown();
-
-    return 0;
-}*/
-
 int main(int argc, char *argv[]) {
     auto app = Easy::ApplicationBuilder::Start()
             .Window<OpenGLWindow>()
@@ -233,58 +221,3 @@ int main(int argc, char *argv[]) {
     app->Run();
     return 0;
 }
-
-/*
-void RunJavaTests() {
-    using namespace ScriptingEngine;
-    using namespace Lib;
-
-    using FunctionType1 = SpecializedKNativeFunctionInterface<JInteger(JInteger)>;
-    using FunctionType2 = SpecializedKNativeFunctionInterface<void(JString, JString)>;
-
-    constexpr static Class FunctionTestsDefinition{
-        "com/easy/Test/FunctionTests",
-        Static{
-            Method{"TestInvokeIntInt", Return{FunctionType1::Definition}, Params{}},
-            Method{"TestStringStringVoid", Return{FunctionType2::Definition}, Params{}},
-        }
-    };
-
-    FunctionType1 function(
-        Owned{}, static_cast<jobject>(jni::StaticRef<FunctionTestsDefinition>().template Call<"TestInvokeIntInt">()));
-
-    JInteger result = function.Get().value()(JInteger{5});
-
-    FunctionType2 function2(
-        Owned{},
-        static_cast<jobject>(jni::StaticRef<FunctionTestsDefinition>().template Call<"TestStringStringVoid">()));
-
-    function2.Get().value()(JString{"Hello"}, JString{"World"});
-
-    EZ_ASSERT(result.Get() == 6, "Expected 6, got {}", result.GetOrDefault());
-}
-*/
-
-
-// JString space = JString{" "};
-//
-// auto concat =
-//         ScriptingEngine::KNativeFunctions::KNativeFunction<JString(JString, JString)>(
-//             [&space](JString str1, JString str2) {
-//                 return JString{str1.Get() + space.Get() + str2.Get()};
-//             }
-//         ).CastToInterface();
-// // Scoped.
-// {
-//     std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
-//     for (int i = 0; i < 1000000; i++) {
-//         JString res = concat(JString{"Hello"}, JString{"World"});
-//         if (i % 10000 == 0) {
-//             EZ_CORE_INFO("Concat: {0}", res.Get().c_str());
-//             ScriptingEngine::Lib::CallGC();
-//         }
-//     }
-//     std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
-//     std::cout << "Time taken for 1000000 concatenations: "
-//             << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << std::endl;
-// }
