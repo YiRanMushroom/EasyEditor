@@ -187,7 +187,11 @@ namespace Easy {
                     m_SceneFramebuffer->Resize(static_cast<uint32_t>(m_ViewportSize.x),
                                                static_cast<uint32_t>(m_ViewportSize.y));
                     auto& camera = m_CameraEntity.GetComponent<CameraComponent>();
-                    camera.Camera.SetViewportSize(m_ViewportSize.x, m_ViewportSize.y);
+                    if (camera.FixedAspectRatio || camera.Camera.GetProjectionType() == SceneCamera::ProjectionType::Perspective) {
+                        camera.Camera.SetViewportSize(
+                            static_cast<uint32_t>(m_ViewportSize.x),
+                            static_cast<uint32_t>(m_ViewportSize.y));
+                    }
                 });
         }
 
